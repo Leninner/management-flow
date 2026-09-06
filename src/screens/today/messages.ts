@@ -16,14 +16,21 @@ const TEMPLATE_PREFIX = 'template.'
 /** Bank details pasted into the "cuenta y total" message. */
 const BANK_ACCOUNT_KEY = 'bank.account'
 
-/** Why this row is here. Short, lowercase, the way she would say it. */
+/**
+ * Why this row is here. Short, lowercase, the way she would say it.
+ *
+ * The row appends the day count, and about 27 characters fit before it
+ * truncates. The days are what differentiate one row from the next, so the
+ * reason has to leave room for them. Nothing here repeats the header either:
+ * when the cutoff is close it already says so in red across the whole screen.
+ */
 export const FOLLOW_UP_REASON: Record<FollowUpTemplateKey, string> = {
-  cutoff: 'sin pagar, ya viene el corte',
-  arrived: 'ya llegó, falta entregar',
-  balance: 'le falta el saldo',
-  payment: 'confirmó, no ha pagado',
+  cutoff: 'sin pagar',
+  arrived: 'falta entregar',
+  balance: 'falta el saldo',
+  payment: 'no ha pagado',
   confirmation: 'sin confirmar',
-  reengage: 'no ha pedido esta campaña',
+  reengage: 'no ha pedido',
   repurchase: 'entregado',
 }
 

@@ -30,7 +30,7 @@ import { ConfirmSheet } from './orders/ConfirmSheet'
 import { orderStatus } from './orders/filters'
 import { formatShortDate, todayIso } from './orders/format'
 import { ItemCard } from './orders/ItemCard'
-import { displayItems, itemHistory, setItemPrice, setItemQuantity } from './orders/items'
+import { itemHistory } from './orders/items'
 import { PaymentSheet } from './orders/PaymentSheet'
 import { PriceSheet } from './orders/PriceSheet'
 import { ShippingSheet } from './orders/ShippingSheet'
@@ -46,7 +46,7 @@ export interface OrderDetailProps {
 export function OrderDetail({ orderId }: OrderDetailProps) {
   const { push, back } = useNavigation()
   const [sheet, setSheet] = useState<OpenSheet>(null)
-  const [priceIndex, setPriceIndex] = useState(0)
+  const [priceName, setPriceName] = useState('')
 
   const data = useLiveQuery(async () => {
     const found = await orderRepo.get(orderId)
@@ -68,8 +68,7 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
   const balance = orderBalance(order)
   const total = orderTotal(order)
   const paid = order.paidAmount
-  const items = displayItems(order)
-  const priceItem = order.items[priceIndex]
+  const priceItem = order.items.find((item) => item.name === priceName)
 
   async function pay(amount: number) {
     await orderRepo.recordPayment(order.id, amount)
@@ -161,13 +160,15 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
         action={<Money value={orderSubtotal(order)} size="lg" />}
       />
       <div className="flex flex-col gap-2">
-        {items.map(({ item, index }) => (
+        {order.items.map((item, index) => (
           <ItemCard
-            key={`${index}-${item.name}`}
+            key={item.name}
             item={item}
-            onQuantityChange={(quantity) => void setItemQuantity(order, index, quantity)}
+            onQuantityChange={(quantity) =>
+              void orderRepo.setItemQuantity(order.id, item.name, quantity)
+            }
             onPriceClick={() => {
-              setPriceIndex(index)
+              setPriceName(item.name)
               setSheet('price')
             }}
             onRemove={() => void orderRepo.removeItem(order.id, index)}
@@ -240,7 +241,7 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
         onClose={() => setSheet(null)}
         name={priceItem?.name ?? ''}
         price={priceItem?.price ?? 0}
-        onSave={(price) => void setItemPrice(order, priceIndex, price)}
+        onSave={(price) => void orderRepo.setItemPrice(order.id, priceName, price)}
       />
 
       <ConfirmSheet

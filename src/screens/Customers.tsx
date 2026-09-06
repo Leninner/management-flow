@@ -9,10 +9,22 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { UserPlus, Users, UserX } from 'lucide-react'
 import { useState } from 'react'
 import { customers as customerRepo, orders as orderRepo } from '../data'
-import type { Order } from '../db/types'
+import type { Customer, Order } from '../db/types'
 import { BigButton, EmptyState, Row, SearchField, useNavigation } from '../ui'
 import { NewCustomerSheet } from './customers/NewCustomerSheet'
 import { owedBy } from './orders/filters'
+
+/**
+ * The phone usually lives in `whatsapp` AND as an alias, since adding it as an
+ * alias is how a TikTok handle gets joined to a WhatsApp number. Printing both
+ * showed the same number twice.
+ */
+function contactLine(customer: Customer): string {
+  const seen = [...(customer.aliases ?? []), customer.whatsapp].filter(
+    (value): value is string => Boolean(value),
+  )
+  return [...new Set(seen)].join(' · ')
+}
 
 export function Customers() {
   const { push } = useNavigation()
@@ -61,9 +73,7 @@ export function Customers() {
               key={customer.id}
               status={owed > 0 ? 'owes' : undefined}
               title={customer.name}
-              subtitle={[...(customer.aliases ?? []), customer.whatsapp]
-                .filter(Boolean)
-                .join(' · ')}
+              subtitle={contactLine(customer)}
               amount={owed > 0 ? owed : undefined}
               onClick={() => push({ kind: 'customerDetail', customerId: customer.id })}
             />

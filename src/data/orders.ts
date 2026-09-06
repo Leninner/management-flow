@@ -158,6 +158,33 @@ export async function recordContact(id: string, at: string = nowIso()): Promise<
   return patch(id, (order) => ({ contacts: [...order.contacts, at] }))
 }
 
+/**
+ * Corrects a quantity in place. Zero removes the line, and the last line going
+ * leaves an order with no items, exactly like `removeItem`: an order is only
+ * deleted when she cancels it.
+ *
+ * One transaction. Rebuilding this as a remove plus a capture is two writes on
+ * money data, and an interruption between them loses the line outright.
+ */
+export async function setItemQuantity(id: string, itemName: string, quantity: number): Promise<Order> {
+  if (!Number.isFinite(quantity) || quantity < 0) throw new Error('A quantity cannot be negative')
+  return patch(id, (order) => {
+    const index = indexOfItem(order, itemName)
+    if (quantity === 0) return { items: order.items.filter((_, position) => position !== index) }
+    return { items: order.items.map((item, position) => (position === index ? { ...item, quantity } : item)) }
+  })
+}
+
+/** Fixes a price in place, keeping the quantity and the position of the line. */
+export async function setItemPrice(id: string, itemName: string, price: number): Promise<Order> {
+  if (!Number.isFinite(price) || price < 0) throw new Error('A price cannot be negative')
+  const exact = fromCents(toCents(price))
+  return patch(id, (order) => {
+    const index = indexOfItem(order, itemName)
+    return { items: order.items.map((item, position) => (position === index ? { ...item, price: exact } : item)) }
+  })
+}
+
 export async function removeItem(id: string, index: number): Promise<Order> {
   return patch(id, (order) => {
     if (index < 0 || index >= order.items.length) throw new Error(`No item at position ${index}`)
@@ -172,6 +199,18 @@ export async function setNotes(id: string, notes: string): Promise<Order> {
 /** A cancelled order is deleted. At this scale one more state is not worth it. */
 export async function remove(id: string): Promise<void> {
   await db.orders.delete(id)
+}
+
+/**
+ * Same matching a capture uses when it merges: trimmed and case-insensitive. A
+ * looser or stricter rule here would silently edit the wrong line, or add a
+ * duplicate one instead of the line she tapped.
+ */
+function indexOfItem(order: Order, itemName: string): number {
+  const key = normalizeName(itemName)
+  const index = order.items.findIndex((item) => normalizeName(item.name) === key)
+  if (index < 0) throw new Error(`No item named "${itemName}" in order ${order.id}`)
+  return index
 }
 
 function normalizeCaptured(item: CapturedItem): OrderItem {

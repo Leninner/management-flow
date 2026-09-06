@@ -10,7 +10,9 @@ export class SalesDatabase extends Dexie {
   constructor(name = 'oriflame-sales') {
     super(name)
     this.version(1).stores({
-      campaigns: 'id, active, cutoffDate',
+      // `active` is deliberately NOT indexed: IndexedDB cannot use a boolean
+      // as a key, so the index would silently match nothing. getActive scans.
+      campaigns: 'id, cutoffDate',
       customers: 'id, name, *aliases',
       orders: 'id, campaignId, customerId, [campaignId+customerId], confirmed',
       settings: 'key',

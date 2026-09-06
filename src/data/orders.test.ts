@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db/db'
+import type { Order } from '../db/types'
 import * as orders from './orders'
 import { resetDatabase } from './test-db'
 
@@ -321,5 +322,145 @@ describe('moveUnconfirmed', () => {
     await expect(db.orders.count()).resolves.toBe(2)
     await expect(db.orders.get(carried.id)).resolves.toMatchObject({ campaignId: CAMPAIGN, items: [{ name: 'Labial', quantity: 1, price: 7 }] })
     await expect(db.orders.get(waiting.id)).resolves.toMatchObject({ items: [{ name: 'Crema', quantity: 1, price: 9 }] })
+  })
+})
+
+describe('editing an item in place', () => {
+  async function seedTwoLines() {
+    const created = await orders.addItem({
+      campaignId: CAMPAIGN,
+      customerId: CUSTOMER,
+      item: { name: 'Labial', quantity: 2, price: 7 },
+    })
+    await orders.addItem({ campaignId: CAMPAIGN, customerId: CUSTOMER, item: { name: 'Crema', quantity: 1, price: 9 } })
+    return created
+  }
+
+  describe('setItemQuantity', () => {
+    it('changes the quantity and leaves the price alone', async () => {
+      const created = await seedTwoLines()
+      const order = await orders.setItemQuantity(created.id, 'Labial', 5)
+      expect(order.items).toEqual([
+        { name: 'Labial', quantity: 5, price: 7 },
+        { name: 'Crema', quantity: 1, price: 9 },
+      ])
+    })
+
+    it('keeps the line where it was instead of sending it to the end', async () => {
+      const created = await seedTwoLines()
+      await orders.addItem({ campaignId: CAMPAIGN, customerId: CUSTOMER, item: { name: 'Rímel', price: 11 } })
+      const order = await orders.setItemQuantity(created.id, 'Labial', 4)
+      expect(order.items.map((item) => item.name)).toEqual(['Labial', 'Crema', 'Rímel'])
+    })
+
+    it('finds the line the same way a capture does, trimmed and ignoring case', async () => {
+      const created = await orders.addItem({
+        campaignId: CAMPAIGN,
+        customerId: CUSTOMER,
+        item: { name: '38588 Novage', quantity: 1, price: 12.9 },
+      })
+      const order = await orders.setItemQuantity(created.id, '  38588 NOVAGE ', 3)
+      expect(order.items).toEqual([{ name: '38588 Novage', quantity: 3, price: 12.9 }])
+    })
+
+    it('removes the line when the quantity drops to zero', async () => {
+      const created = await seedTwoLines()
+      const order = await orders.setItemQuantity(created.id, 'Labial', 0)
+      expect(order.items).toEqual([{ name: 'Crema', quantity: 1, price: 9 }])
+    })
+
+    it('leaves an empty order behind when the last line goes, exactly like removeItem', async () => {
+      const created = await orders.addItem({ campaignId: CAMPAIGN, customerId: CUSTOMER, item: { name: 'Labial' } })
+      const order = await orders.setItemQuantity(created.id, 'Labial', 0)
+      expect(order.items).toEqual([])
+      await expect(db.orders.get(created.id)).resolves.toMatchObject({ items: [] })
+    })
+
+    it('refuses a negative quantity', async () => {
+      const created = await seedTwoLines()
+      await expect(orders.setItemQuantity(created.id, 'Labial', -1)).rejects.toThrow()
+    })
+
+    it('throws for an unknown order and for a line that is not there', async () => {
+      const created = await seedTwoLines()
+      await expect(orders.setItemQuantity('nope', 'Labial', 1)).rejects.toThrow()
+      await expect(orders.setItemQuantity(created.id, 'Perfume', 1)).rejects.toThrow()
+    })
+  })
+
+  describe('setItemPrice', () => {
+    it('changes the price, keeping the quantity and the position', async () => {
+      const created = await seedTwoLines()
+      const order = await orders.setItemPrice(created.id, 'Labial', 8.5)
+      expect(order.items).toEqual([
+        { name: 'Labial', quantity: 2, price: 8.5 },
+        { name: 'Crema', quantity: 1, price: 9 },
+      ])
+    })
+
+    it('accepts a price of zero for a product still without one', async () => {
+      const created = await seedTwoLines()
+      const order = await orders.setItemPrice(created.id, 'Labial', 0)
+      expect(order.items[0]).toEqual({ name: 'Labial', quantity: 2, price: 0 })
+    })
+
+    it('refuses a negative price', async () => {
+      const created = await seedTwoLines()
+      await expect(orders.setItemPrice(created.id, 'Labial', -1)).rejects.toThrow()
+    })
+
+    it('throws for an unknown order and for a line that is not there', async () => {
+      const created = await seedTwoLines()
+      await expect(orders.setItemPrice('nope', 'Labial', 1)).rejects.toThrow()
+      await expect(orders.setItemPrice(created.id, 'Perfume', 1)).rejects.toThrow()
+    })
+  })
+
+  describe('when the write is interrupted', () => {
+    /** Rejects any write that carries the edited line, and lets the rest through. */
+    function failTheWriteThatCarries(quantity: number) {
+      const realPut = db.orders.put.bind(db.orders)
+      return vi.spyOn(db.orders, 'put').mockImplementation(((order: Order) =>
+        order.items.some((item) => item.quantity === quantity)
+          ? Promise.reject(new Error('disk went away'))
+          : realPut(order)) as typeof db.orders.put)
+    }
+
+    /** What the screen had to do before this API existed. Kept to prove the difference. */
+    async function naiveSetItemQuantity(id: string, itemName: string, quantity: number): Promise<void> {
+      const order = await db.orders.get(id)
+      if (!order) throw new Error('missing order')
+      const index = order.items.findIndex((item) => item.name === itemName)
+      const line = order.items[index]
+      if (!line) throw new Error('missing line')
+      await orders.removeItem(id, index)
+      await orders.addItem({
+        campaignId: order.campaignId,
+        customerId: order.customerId,
+        item: { name: line.name, quantity, price: line.price },
+      })
+    }
+
+    it('leaves the order exactly as it was', async () => {
+      const created = await seedTwoLines()
+      const before = await db.orders.get(created.id)
+
+      const failing = failTheWriteThatCarries(5)
+      await expect(orders.setItemQuantity(created.id, 'Labial', 5)).rejects.toThrow('disk went away')
+      failing.mockRestore()
+
+      await expect(db.orders.get(created.id)).resolves.toEqual(before)
+    })
+
+    it('loses the line under the remove-then-add version the screen used to run', async () => {
+      const created = await seedTwoLines()
+
+      const failing = failTheWriteThatCarries(5)
+      await expect(naiveSetItemQuantity(created.id, 'Labial', 5)).rejects.toThrow('disk went away')
+      failing.mockRestore()
+
+      const order = await db.orders.get(created.id)
+      expect(order?.items.map((item) => item.name)).toEqual(['Crema'])
+    })
   })
 })
