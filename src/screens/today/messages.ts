@@ -4,7 +4,7 @@
  * The app never sends anything: it fills the box, she reads it and hits send.
  */
 import { DEFAULT_TEMPLATES } from '../../content/templates'
-import { itemsAsLines, renderTemplate, whatsappUrl } from '../../content/whatsapp'
+import { itemsAsLines, renderTemplate } from '../../content/whatsapp'
 import type { Campaign, Customer, Order, Setting } from '../../db/types'
 import type { FollowUp, FollowUpTemplateKey } from '../../domain'
 import { orderBalance, orderTotal } from '../../domain'
@@ -90,9 +90,4 @@ export function renderFollowUpMessage(input: MessageInput): string {
     dia: formatWeekday(today),
     cuenta: account,
   })
-}
-
-/** Opens WhatsApp with the message already typed in. */
-export function openWhatsapp(customer: Customer, message: string): void {
-  window.open(whatsappUrl(customer.whatsapp, message), '_blank', 'noopener,noreferrer')
 }

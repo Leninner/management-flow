@@ -1,10 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { CalendarCheck, Package } from 'lucide-react'
+import { CalendarCheck } from 'lucide-react'
 import { useEffect } from 'react'
 import { campaigns, customers, orders, settings } from '../data'
 import type { Campaign, Customer, Order, Setting } from '../db/types'
 import { followUps, fromCents, orderBalanceCents } from '../domain'
-import { BigButton, EmptyState, Row, SectionHeader, useNavigation } from '../ui'
+import { EmptyState, Row, SectionHeader, useNavigation } from '../ui'
 import { CampaignHeader } from './today/CampaignHeader'
 import { FirstRun } from './today/FirstRun'
 import { FollowUpRow } from './today/FollowUpRow'
@@ -35,7 +35,7 @@ export interface TodayProps {
  * a deadline, something to write, or money that has not come in yet.
  */
 export function Today({ onOpenOrders }: TodayProps) {
-  const { go, push } = useNavigation()
+  const { go } = useNavigation()
   const today = todayIso()
 
   function openOrders(filter: OrdersShortcut) {
@@ -133,9 +133,6 @@ export function Today({ onOpenOrders }: TodayProps) {
         />
       </div>
 
-      <BigButton icon={Package} onClick={() => push({ kind: 'capture' })}>
-        Capturar pedido
-      </BigButton>
     </>
   )
 }

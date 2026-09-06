@@ -1,4 +1,6 @@
+import { useLiveQuery } from 'dexie-react-hooks'
 import { useState, type ReactNode } from 'react'
+import { campaigns } from './data'
 import { Capture } from './screens/Capture'
 import { CustomerDetail } from './screens/CustomerDetail'
 import { Customers } from './screens/Customers'
@@ -17,7 +19,7 @@ import {
 } from './ui'
 
 const VIEW_TITLE: Record<View['kind'], string> = {
-  capture: 'Capturar',
+  capture: 'Anotar',
   orderDetail: 'Pedido',
   customerDetail: 'Cliente',
   supplierOrder: 'Pedido a Oriflame',
@@ -48,7 +50,7 @@ export function App() {
 }
 
 function Shell() {
-  const { screen, view, go, back } = useNavigation()
+  const { screen, view, go, push, back } = useNavigation()
 
   /**
    * The only state the shell owns. Today's "Por cobrar" and "Por entregar"
@@ -56,6 +58,15 @@ function Shell() {
    * of 7 is exactly what makes her hesitate.
    */
   const [ordersFilter, setOrdersFilter] = useState<OrderFilter | undefined>(undefined)
+
+  /**
+   * Capturing needs a campaign to write into. Without one the button lands on
+   * a screen that can only tell her to go back, so it is not drawn at all --
+   * which is also what keeps it from sitting on top of the one button the
+   * first-run screen has.
+   */
+  const active = useLiveQuery(async () => ({ campaign: await campaigns.getActive() }), [])
+  const canCapture = active?.campaign !== undefined
 
   function selectTab(next: Screen) {
     // Tapping the tab itself always gives the plain list. Only the Hoy
@@ -75,6 +86,9 @@ function Shell() {
       onSelectTab={selectTab}
       title={view ? VIEW_TITLE[view.kind] : undefined}
       onBack={view ? back : undefined}
+      // A pushed view owns the bottom of the phone for its own action.
+      tabBar={!view}
+      onCapture={canCapture ? () => push({ kind: 'capture' }) : undefined}
     >
       {/* Remounting per view keeps a detail screen from inheriting stale state. */}
       {view ? (

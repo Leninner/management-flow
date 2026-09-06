@@ -1,0 +1,366 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    sc-for, sc-if { display: contents; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #5B2FE3; text-decoration: none; }
+    a:hover { color: #4522B5; }
+    button { font: inherit; border: 0; background: none; cursor: pointer; color: inherit; }
+    input { font: inherit; border: 0; outline: 0; background: none; color: inherit; width: 100%; }
+    input::placeholder { color: #A79FBC; }
+    .num { font-variant-numeric: tabular-nums; }
+    .noscroll::-webkit-scrollbar { display: none; }
+  </style>
+</helmet>
+
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F7F5FC; color: #1B1630;">
+
+  <div style="height: 62px; display: flex; align-items: center; gap: 4px; padding: 14px 16px 0;">
+    <button aria-label="Volver" style="width: 40px; height: 40px; flex: 0 0 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #5B2FE3;">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5 8 12l7 7"></path></svg>
+    </button>
+    <span style="flex: 1 1 auto; font-size: 20px; font-weight: 700; letter-spacing: -0.4px;">Anotar</span>
+    <span style="font-size: 13px; font-weight: 700; color: #5B2FE3; background: #EFE9FF; padding: 6px 12px; border-radius: 999px;">C13</span>
+  </div>
+
+  <div class="noscroll" style="position: absolute; top: 62px; left: 0; right: 0; bottom: 0; overflow-y: auto; padding: 8px 20px 132px; scrollbar-width: none;">
+
+    <sc-if value="{{noCustomer}}" hint-placeholder-val="{{true}}">
+      <div>
+        <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 12px;">¿Para quién?</div>
+
+        <div style="display: flex; align-items: center; gap: 10px; min-height: 54px; background: #FFFFFF; border: 1.5px solid #DCD2F7; border-radius: 18px; padding: 0 16px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A79FBC" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10.8 17.6a6.8 6.8 0 1 0 0-13.6 6.8 6.8 0 0 0 0 13.6ZM16 16l4 4"></path></svg>
+          <input value="{{customerQuery}}" onChange="{{onCustomerQuery}}" placeholder="Nombre o @usuario" style="font-size: 17px;">
+        </div>
+
+        <div class="noscroll" style="display: flex; gap: 14px; overflow-x: auto; padding: 16px 0 4px; scrollbar-width: none;">
+          <sc-for list="{{recents}}" as="r" hint-placeholder-count="5">
+            <button onClick="{{r.pick}}" style="flex: 0 0 auto; width: 62px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+              <span style="width: 56px; height: 56px; border-radius: 999px; background: #FFFFFF; border: 1.5px solid #EBE4FB; color: #5B2FE3; font-size: 21px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{r.initial}}</span>
+              <span style="font-size: 12px; font-weight: 600; color: #6B6383; max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{r.first}}</span>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
+          <sc-if value="{{showCreateCustomer}}" hint-placeholder-val="{{true}}">
+            <button onClick="{{createCustomer}}" style="display: flex; align-items: center; gap: 12px; min-height: 62px; background: #EFE9FF; border-radius: 20px; padding: 0 16px; text-align: left;">
+              <span style="width: 40px; height: 40px; flex: 0 0 40px; border-radius: 999px; background: #5B2FE3; color: #FFFFFF; display: flex; align-items: center; justify-content: center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+              </span>
+              <span style="min-width: 0; font-size: 17px; font-weight: 700; color: #4522B5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Crear a {{typedCustomer}}</span>
+            </button>
+          </sc-if>
+
+          <sc-for list="{{customerResults}}" as="c" hint-placeholder-count="3">
+            <button onClick="{{c.pick}}" style="display: flex; align-items: center; gap: 12px; min-height: 62px; background: #FFFFFF; border-radius: 20px; padding: 0 14px; text-align: left; box-shadow: 0 2px 8px rgba(60,30,140,0.05);">
+              <span style="width: 42px; height: 42px; flex: 0 0 42px; border-radius: 999px; background: #F1ECFF; color: #5B2FE3; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{c.initial}}</span>
+              <span style="min-width: 0; flex: 1 1 auto;">
+                <span style="display: block; font-size: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{c.name}}</span>
+                <span style="display: block; font-size: 13px; color: #857D9B; margin-top: 1px;">{{c.handle}}</span>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{hasCustomer}}" hint-placeholder-val="{{false}}">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; background: #FFFFFF; border-radius: 999px; padding: 6px 6px 6px 8px; box-shadow: 0 2px 8px rgba(60,30,140,0.05);">
+          <span style="width: 40px; height: 40px; flex: 0 0 40px; border-radius: 999px; background: #F1ECFF; color: #5B2FE3; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{customerInitial}}</span>
+          <span style="flex: 1 1 auto; min-width: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{customerName}}</span>
+          <button onClick="{{clearCustomer}}" aria-label="Cambiar de cliente" style="width: 40px; height: 40px; flex: 0 0 40px; border-radius: 999px; background: #F4F1FC; color: #6B6383; display: flex; align-items: center; justify-content: center;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+          </button>
+        </div>
+
+        <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin: 22px 0 12px;">¿Qué se lleva?</div>
+
+        <sc-if value="{{noProduct}}" hint-placeholder-val="{{true}}">
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px; min-height: 54px; background: #FFFFFF; border: 1.5px solid #DCD2F7; border-radius: 18px; padding: 0 16px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A79FBC" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10.8 17.6a6.8 6.8 0 1 0 0-13.6 6.8 6.8 0 0 0 0 13.6ZM16 16l4 4"></path></svg>
+              <input value="{{productQuery}}" onChange="{{onProductQuery}}" placeholder="Código o nombre" style="font-size: 17px;">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px;">
+              <sc-if value="{{newOpen}}" hint-placeholder-val="{{false}}">
+                <div style="background: #FFFFFF; border: 1.5px solid #DCD2F7; border-radius: 20px; padding: 14px; box-shadow: 0 2px 8px rgba(60,30,140,0.05);">
+                  <div style="font-size: 13px; font-weight: 700; color: #857D9B;">Producto nuevo</div>
+                  <div style="min-height: 48px; display: flex; align-items: center; background: #F7F5FC; border-radius: 14px; padding: 0 14px; margin-top: 10px;">
+                    <input value="{{newName}}" onChange="{{onNewName}}" placeholder="38588 Novage" style="font-size: 17px; font-weight: 600;">
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                    <div style="flex: 1 1 auto; min-height: 48px; display: flex; align-items: center; gap: 6px; background: #F7F5FC; border-radius: 14px; padding: 0 14px;">
+                      <span class="num" style="font-size: 17px; font-weight: 700; color: #857D9B;">$</span>
+                      <input class="num" value="{{newPrice}}" onChange="{{onNewPrice}}" inputmode="decimal" placeholder="12.90" style="font-size: 17px; font-weight: 700;">
+                    </div>
+                    <button onClick="{{saveNew}}" style="flex: 0 0 auto; min-height: 48px; padding: 0 22px; border-radius: 14px; background: #5B2FE3; color: #FFFFFF; font-size: 16px; font-weight: 700;">Listo</button>
+                  </div>
+                  <button onClick="{{saveNewNoPrice}}" style="display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 4px; color: #6B6383; font-size: 15px; font-weight: 600;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F08C00" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 7.5v6M12 16.8v.2"></path><circle cx="12" cy="12" r="8.6"></circle></svg>
+                    Todavía no sé el precio
+                  </button>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{showCreateProduct}}" hint-placeholder-val="{{false}}">
+                <button onClick="{{openNew}}" style="display: flex; align-items: center; gap: 12px; min-height: 62px; background: #EFE9FF; border-radius: 20px; padding: 0 16px; text-align: left;">
+                  <span style="width: 40px; height: 40px; flex: 0 0 40px; border-radius: 999px; background: #5B2FE3; color: #FFFFFF; display: flex; align-items: center; justify-content: center;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+                  </span>
+                  <span style="min-width: 0; font-size: 17px; font-weight: 700; color: #4522B5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Nuevo: {{typedProduct}}</span>
+                </button>
+              </sc-if>
+
+              <sc-for list="{{productResults}}" as="s" hint-placeholder-count="4">
+                <button onClick="{{s.pick}}" style="display: flex; align-items: center; gap: 12px; min-height: 62px; background: #FFFFFF; border-radius: 20px; padding: 0 16px; text-align: left; box-shadow: 0 2px 8px rgba(60,30,140,0.05);">
+                  <span style="min-width: 0; flex: 1 1 auto;">
+                    <span style="display: block; font-size: 16px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{s.name}}</span>
+                    <span style="display: block; font-size: 13px; color: #857D9B; margin-top: 1px;">{{s.last}}</span>
+                  </span>
+                  <span class="num" style="font-size: 18px; font-weight: 700; letter-spacing: -0.4px; color: #5B2FE3;">{{s.price}}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{hasProduct}}" hint-placeholder-val="{{false}}">
+          <div style="background: #FFFFFF; border-radius: 22px; padding: 16px; box-shadow: 0 2px 10px rgba(60,30,140,0.06);">
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+              <span style="min-width: 0; flex: 1 1 auto;">
+                <span style="display: block; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.25;">{{productName}}</span>
+                <sc-if value="{{hasPrice}}" hint-placeholder-val="{{true}}">
+                  <span class="num" style="display: inline-block; font-size: 16px; font-weight: 700; color: #5B2FE3; margin-top: 6px;">{{productPrice}}</span>
+                </sc-if>
+                <sc-if value="{{noPrice}}" hint-placeholder-val="{{false}}">
+                  <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: #8A5300; background: #FFF1D9; padding: 5px 11px; border-radius: 999px; margin-top: 8px;">Falta el precio</span>
+                </sc-if>
+              </span>
+              <button onClick="{{clearProduct}}" aria-label="Cambiar de producto" style="width: 40px; height: 40px; flex: 0 0 40px; border-radius: 999px; background: #F4F1FC; color: #6B6383; display: flex; align-items: center; justify-content: center;">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+              </button>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #F0ECF9;">
+              <span style="font-size: 15px; font-weight: 600; color: #857D9B;">Cantidad</span>
+              <span style="display: flex; align-items: center; gap: 4px; background: #F7F5FC; border-radius: 999px; padding: 4px;">
+                <button onClick="{{less}}" aria-label="Quitar uno" style="width: 48px; height: 48px; border-radius: 999px; background: #FFFFFF; color: #5B2FE3; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(60,30,140,0.10);">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"></path></svg>
+                </button>
+                <span class="num" style="min-width: 44px; text-align: center; font-size: 26px; font-weight: 700;">{{quantity}}</span>
+                <button onClick="{{more}}" aria-label="Agregar uno" style="width: 48px; height: 48px; border-radius: 999px; background: #FFFFFF; color: #5B2FE3; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(60,30,140,0.10);">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 6v12M6 12h12"></path></svg>
+                </button>
+              </span>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{hasCaptures}}" hint-placeholder-val="{{false}}">
+      <div style="margin-top: 26px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+          <span style="font-size: 15px; font-weight: 700;">En este live</span>
+          <span class="num" style="font-size: 13px; font-weight: 700; color: #5B2FE3; background: #EFE9FF; padding: 3px 9px; border-radius: 999px;">{{captureCount}}</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <sc-for list="{{captures}}" as="c" hint-placeholder-count="2">
+            <div style="display: flex; align-items: center; gap: 10px; background: #FFFFFF; border-radius: 18px; padding: 10px 8px 10px 14px; box-shadow: 0 2px 8px rgba(60,30,140,0.05);">
+              <span class="num" style="width: 34px; height: 34px; flex: 0 0 34px; border-radius: 10px; background: #F1ECFF; color: #5B2FE3; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{c.qty}}</span>
+              <span style="min-width: 0; flex: 1 1 auto;">
+                <span style="display: block; font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{c.item}}</span>
+                <span style="display: block; font-size: 13px; color: #857D9B;">{{c.who}}</span>
+              </span>
+              <button onClick="{{c.undo}}" aria-label="Quitar" style="width: 40px; height: 40px; flex: 0 0 40px; border-radius: 999px; color: #A79FBC; display: flex; align-items: center; justify-content: center;">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+              </button>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{canSave}}" hint-placeholder-val="{{true}}">
+    <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 28px 20px 26px; background: linear-gradient(to top, #F7F5FC 62%, rgba(247,245,252,0));">
+      <button onClick="{{save}}" style="width: 100%; min-height: 58px; border-radius: 999px; background: #5B2FE3; color: #FFFFFF; font-size: 19px; font-weight: 700; letter-spacing: -0.2px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 10px 24px rgba(91,47,227,0.34);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg>
+        <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Anotar a {{saveName}}</span>
+      </button>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+const PEOPLE = [
+  { id: 'c1', name: 'Karla Pérez', handle: '@karlitap' },
+  { id: 'c2', name: 'Doris Chango', handle: '098 445 2210' },
+  { id: 'c3', name: 'Mayra Lligalo', handle: '@may.lligalo' },
+  { id: 'c4', name: 'Silvia Naranjo', handle: '099 812 0034' },
+  { id: 'c5', name: 'Jessica Toapanta', handle: '@jessi_t' },
+  { id: 'c6', name: 'Rocío Masabanda', handle: '098 220 7719' },
+]
+
+const CATALOG = [
+  { name: '38588 Novage Ultimate Lift', price: 32.9, last: 'hace 2 días' },
+  { name: '35450 Milk & Honey crema', price: 12.5, last: 'la semana pasada' },
+  { name: '41720 Giordani Gold labial', price: 9.9, last: 'campaña C12' },
+  { name: '30621 Optimals Even Out', price: 18.4, last: 'campaña C12' },
+  { name: '33961 Love Nature shampoo', price: 7.2, last: 'hace 5 días' },
+]
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props)
+    this.state = {
+      customer: null,
+      customerQuery: '',
+      product: null,
+      productQuery: '',
+      quantity: 1,
+      captures: [],
+      newOpen: false,
+      newName: '',
+      newPrice: '',
+    }
+  }
+
+  money(value) {
+    return '$' + value.toFixed(2)
+  }
+
+  first(name) {
+    return name.split(' ')[0]
+  }
+
+  initial(name) {
+    return name.charAt(0).toUpperCase()
+  }
+
+  match(text, query) {
+    return text.toLowerCase().indexOf(query.trim().toLowerCase()) >= 0
+  }
+
+  pickProduct(entry) {
+    this.setState({ product: entry, productQuery: '', newOpen: false, quantity: 1 })
+  }
+
+  renderVals() {
+    const s = this.state
+    const customer = s.customer
+    const product = s.product
+
+    const typedCustomer = s.customerQuery.trim()
+    const people = typedCustomer === '' ? [] : PEOPLE.filter((p) => this.match(p.name, typedCustomer))
+    const exactPerson = people.some((p) => p.name.toLowerCase() === typedCustomer.toLowerCase())
+
+    const typedProduct = s.productQuery.trim()
+    const catalog = typedProduct === '' ? CATALOG : CATALOG.filter((p) => this.match(p.name, typedProduct))
+    const exactProduct = catalog.some((p) => p.name.toLowerCase() === typedProduct.toLowerCase())
+
+    return {
+      noCustomer: customer === null,
+      hasCustomer: customer !== null,
+      customerName: customer ? customer.name : '',
+      customerInitial: customer ? this.initial(customer.name) : '',
+      customerQuery: s.customerQuery,
+      typedCustomer,
+      showCreateCustomer: typedCustomer !== '' && !exactPerson,
+      onCustomerQuery: (event) => this.setState({ customerQuery: event.target.value }),
+      clearCustomer: () => this.setState({ customer: null, product: null, customerQuery: '', productQuery: '' }),
+      createCustomer: () =>
+        this.setState({ customer: { id: 'new', name: typedCustomer }, customerQuery: '' }),
+
+      recents: PEOPLE.slice(0, 6).map((p) => ({
+        first: this.first(p.name),
+        initial: this.initial(p.name),
+        pick: () => this.setState({ customer: p, customerQuery: '' }),
+      })),
+
+      customerResults: people.map((p) => ({
+        name: p.name,
+        handle: p.handle,
+        initial: this.initial(p.name),
+        pick: () => this.setState({ customer: p, customerQuery: '' }),
+      })),
+
+      noProduct: product === null,
+      hasProduct: product !== null,
+      productName: product ? product.name : '',
+      productPrice: product && product.price !== null ? this.money(product.price) : '',
+      hasPrice: product !== null && product.price !== null,
+      noPrice: product !== null && product.price === null,
+      productQuery: s.productQuery,
+      typedProduct,
+      showCreateProduct: !s.newOpen && typedProduct !== '' && !exactProduct,
+      onProductQuery: (event) => this.setState({ productQuery: event.target.value }),
+      clearProduct: () => this.setState({ product: null, productQuery: '', newOpen: false }),
+      productResults: catalog.slice(0, 4).map((p) => ({
+        name: p.name,
+        last: p.last,
+        price: this.money(p.price),
+        pick: () => this.pickProduct(p),
+      })),
+
+      newOpen: s.newOpen,
+      newName: s.newName,
+      newPrice: s.newPrice,
+      openNew: () => this.setState({ newOpen: true, newName: typedProduct, newPrice: '' }),
+      onNewName: (event) => this.setState({ newName: event.target.value }),
+      onNewPrice: (event) => this.setState({ newPrice: event.target.value }),
+      saveNew: () => {
+        const value = Number(String(s.newPrice).replace(',', '.'))
+        const price = isFinite(value) && value > 0 ? value : null
+        this.pickProduct({ name: s.newName.trim() || typedProduct, price })
+      },
+      saveNewNoPrice: () => this.pickProduct({ name: s.newName.trim() || typedProduct, price: null }),
+
+      quantity: s.quantity,
+      less: () => this.setState({ quantity: Math.max(1, s.quantity - 1) }),
+      more: () => this.setState({ quantity: Math.min(99, s.quantity + 1) }),
+
+      canSave: customer !== null && product !== null,
+      saveName: customer ? this.first(customer.name) : '',
+      save: () =>
+        this.setState({
+          captures: [
+            { key: 'k' + Date.now(), item: product.name, qty: s.quantity, who: this.first(customer.name) },
+          ].concat(s.captures),
+          product: null,
+          productQuery: '',
+          quantity: 1,
+        }),
+
+      hasCaptures: s.captures.length > 0,
+      captureCount: s.captures.length,
+      captures: s.captures.map((c) => ({
+        qty: c.qty,
+        item: c.item,
+        who: c.who,
+        undo: () => this.setState({ captures: s.captures.filter((x) => x.key !== c.key) }),
+      })),
+    }
+  }
+}
+</script>
+</body>
+</html>

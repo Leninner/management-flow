@@ -96,7 +96,7 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
         aria-modal="true"
         aria-label={title}
         className={cx(
-          'relative mx-auto flex max-h-[88dvh] w-full max-w-lg flex-col rounded-t-3xl bg-paper shadow-[0_-8px_32px_rgba(28,25,23,0.18)]',
+          'relative mx-auto flex max-h-[88dvh] w-full max-w-lg flex-col rounded-t-[1.75rem] bg-paper shadow-[0_-8px_40px_rgba(40,20,90,0.22)]',
           !dragging && 'transition-transform duration-200 motion-reduce:transition-none',
         )}
         style={{ transform: visible ? `translateY(${dragY}px)` : 'translateY(100%)' }}
@@ -112,7 +112,7 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
         </div>
 
         <div className="flex min-h-14 items-center gap-2 px-4">
-          <h2 className="flex-1 truncate text-xl font-bold">{title}</h2>
+          <h2 className="flex-1 truncate text-[1.375rem] font-bold tracking-tight">{title}</h2>
           <button
             type="button"
             onClick={onClose}

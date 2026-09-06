@@ -1,0 +1,188 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    sc-for, sc-if { display: contents; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #5B2FE3; text-decoration: none; }
+    a:hover { color: #4522B5; }
+    .num { font-variant-numeric: tabular-nums; }
+    .hex { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; letter-spacing: 0.2px; }
+  </style>
+</helmet>
+
+<div style="width: 760px; height: 844px; overflow: hidden; background: #F7F5FC; color: #1B1630; padding: 34px 36px;">
+
+  <div style="font-size: 30px; font-weight: 700; letter-spacing: -0.8px;">Sistema visual</div>
+  <div style="font-size: 15px; color: #857D9B; margin-top: 2px;">Morado, tipografía del sistema (SF Pro en iPhone), números grandes</div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; margin-top: 24px;">
+
+    <div style="display: flex; flex-direction: column; gap: 22px;">
+
+      <div>
+        <div style="font-size: 13px; font-weight: 700; color: #857D9B; margin-bottom: 10px;">Morado</div>
+        <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px;">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 56px; border-radius: 14px; background: #F6F2FF; border: 1px solid #ECE7F6;"></div>
+            <span class="hex" style="color: #857D9B;">F6F2FF</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 56px; border-radius: 14px; background: #EFE9FF;"></div>
+            <span class="hex" style="color: #857D9B;">EFE9FF</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 56px; border-radius: 14px; background: #C9B8FA;"></div>
+            <span class="hex" style="color: #857D9B;">C9B8FA</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 56px; border-radius: 14px; background: #8B5CF6;"></div>
+            <span class="hex" style="color: #857D9B;">8B5CF6</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 56px; border-radius: 14px; background: #5B2FE3; box-shadow: 0 0 0 2.5px #1B1630;"></div>
+            <span class="hex" style="color: #1B1630; font-weight: 700;">5B2FE3</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 56px; border-radius: 14px; background: #4522B5;"></div>
+            <span class="hex" style="color: #857D9B;">4522B5</span>
+          </div>
+        </div>
+        <div style="font-size: 13px; color: #857D9B; margin-top: 8px;">El marcado es el principal: botones, activos, montos.</div>
+      </div>
+
+      <div>
+        <div style="font-size: 13px; font-weight: 700; color: #857D9B; margin-bottom: 10px;">Otros morados posibles</div>
+        <div style="display: flex; gap: 10px;">
+          <div style="flex: 1 1 0; display: flex; align-items: center; gap: 10px; background: #FFFFFF; border-radius: 16px; padding: 10px 12px;">
+            <span style="width: 34px; height: 34px; border-radius: 10px; background: #7C3AED;"></span>
+            <span><span style="display: block; font-size: 14px; font-weight: 600;">Más vivo</span><span class="hex" style="color: #857D9B;">7C3AED</span></span>
+          </div>
+          <div style="flex: 1 1 0; display: flex; align-items: center; gap: 10px; background: #FFFFFF; border-radius: 16px; padding: 10px 12px;">
+            <span style="width: 34px; height: 34px; border-radius: 10px; background: #6D3FA8;"></span>
+            <span><span style="display: block; font-size: 14px; font-weight: 600;">Más suave</span><span class="hex" style="color: #857D9B;">6D3FA8</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size: 13px; font-weight: 700; color: #857D9B; margin-bottom: 10px;">El color es el estado</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 12px; background: #FFFFFF; border-radius: 16px; padding: 12px 14px;">
+            <span style="width: 12px; height: 12px; border-radius: 999px; background: #E11D48;"></span>
+            <span style="flex: 1 1 auto; font-size: 15px; font-weight: 600;">Debe</span>
+            <span style="font-size: 13px; font-weight: 700; color: #8A0F2E; background: #FFE7EC; padding: 5px 11px; border-radius: 999px;">$22.30</span>
+            <span class="hex" style="color: #857D9B; width: 54px; text-align: right;">E11D48</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; background: #FFFFFF; border-radius: 16px; padding: 12px 14px;">
+            <span style="width: 12px; height: 12px; border-radius: 999px; background: #F08C00;"></span>
+            <span style="flex: 1 1 auto; font-size: 15px; font-weight: 600;">Falta entregar</span>
+            <span style="font-size: 13px; font-weight: 700; color: #8A5300; background: #FFF1D9; padding: 5px 11px; border-radius: 999px;">7 pedidos</span>
+            <span class="hex" style="color: #857D9B; width: 54px; text-align: right;">F08C00</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; background: #FFFFFF; border-radius: 16px; padding: 12px 14px;">
+            <span style="width: 12px; height: 12px; border-radius: 999px; background: #12B36A;"></span>
+            <span style="flex: 1 1 auto; font-size: 15px; font-weight: 600;">Listo</span>
+            <span style="font-size: 13px; font-weight: 700; color: #08663B; background: #DDF7EA; padding: 5px 11px; border-radius: 999px;">Entregado</span>
+            <span class="hex" style="color: #857D9B; width: 54px; text-align: right;">12B36A</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size: 13px; font-weight: 700; color: #857D9B; margin-bottom: 10px;">Neutros</div>
+        <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px;">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 44px; border-radius: 12px; background: #F7F5FC; border: 1px solid #ECE7F6;"></div>
+            <span class="hex" style="color: #857D9B;">F7F5FC</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 44px; border-radius: 12px; background: #FFFFFF; border: 1px solid #ECE7F6;"></div>
+            <span class="hex" style="color: #857D9B;">FFFFFF</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 44px; border-radius: 12px; background: #ECE7F6;"></div>
+            <span class="hex" style="color: #857D9B;">ECE7F6</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 44px; border-radius: 12px; background: #857D9B;"></div>
+            <span class="hex" style="color: #857D9B;">857D9B</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 44px; border-radius: 12px; background: #1B1630;"></div>
+            <span class="hex" style="color: #857D9B;">1B1630</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 22px;">
+
+      <div style="background: #FFFFFF; border-radius: 22px; padding: 20px;">
+        <div style="font-size: 13px; font-weight: 700; color: #857D9B;">Tipografía del sistema</div>
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px;">
+          <div style="display: flex; align-items: baseline; gap: 14px;">
+            <span style="font-size: 34px; font-weight: 700; letter-spacing: -0.8px; line-height: 1;">Hoy</span>
+            <span class="hex" style="color: #857D9B;">34 · 700</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 14px;">
+            <span style="font-size: 22px; font-weight: 700; letter-spacing: -0.5px; line-height: 1;">¿Para quién?</span>
+            <span class="hex" style="color: #857D9B;">22 · 700</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 14px;">
+            <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.2px; line-height: 1;">Karla Pérez</span>
+            <span class="hex" style="color: #857D9B;">17 · 600</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 14px;">
+            <span style="font-size: 16px; font-weight: 400; line-height: 1;">Ya llegó tu pedido</span>
+            <span class="hex" style="color: #857D9B;">16 · 400</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 14px;">
+            <span style="font-size: 13px; font-weight: 600; color: #857D9B; line-height: 1;">falta el saldo · 3 días</span>
+            <span class="hex" style="color: #857D9B;">13 · 600</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 14px; padding-top: 4px; border-top: 1px solid #F0ECF9;">
+            <span class="num" style="font-size: 46px; font-weight: 700; letter-spacing: -1.8px; color: #E11D48; line-height: 1;">$22.30</span>
+            <span class="hex" style="color: #857D9B;">46 · 700 · tabular</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="background: #FFFFFF; border-radius: 22px; padding: 20px;">
+        <div style="font-size: 13px; font-weight: 700; color: #857D9B; margin-bottom: 14px;">Medidas</div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; align-items: center; justify-content: center; height: 58px; border-radius: 999px; background: #5B2FE3; color: #FFFFFF; font-size: 19px; font-weight: 700;">Botón principal · 58</div>
+          <div style="display: flex; gap: 12px;">
+            <div style="flex: 1 1 0; height: 62px; border-radius: 22px; background: #F7F5FC; border: 1px solid #ECE7F6; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #857D9B;">Tarjeta · radio 22</div>
+            <div style="flex: 0 0 62px; height: 62px; border-radius: 999px; background: #F1ECFF; color: #5B2FE3; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;">62</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="width: 44px; height: 44px; border-radius: 12px; border: 1.5px dashed #C9B8FA;"></span>
+            <span style="font-size: 14px; color: #857D9B;">Nada tocable por debajo de 44 px</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":760,"height":844}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

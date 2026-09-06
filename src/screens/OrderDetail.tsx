@@ -6,7 +6,7 @@
  * items, the shipping and what was paid.
  */
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Check, MessageCircle, PackageX, Plus, Trash2, Truck } from 'lucide-react'
+import { Check, DollarSign, MessageCircle, PackageX, Plus, Truck } from 'lucide-react'
 import { useState } from 'react'
 import {
   campaigns as campaignRepo,
@@ -14,12 +14,14 @@ import {
   orders as orderRepo,
   settings as settingsRepo,
 } from '../data'
+import { whatsappUrl } from '../content/whatsapp'
 import { orderBalance, orderSubtotal, orderTotal, toCents } from '../domain'
 import {
   BigButton,
   Card,
   EmptyState,
   formatMoney,
+  HeaderAction,
   Money,
   Row,
   SectionHeader,
@@ -28,14 +30,15 @@ import {
 import { AddItemSheet } from './orders/AddItemSheet'
 import { ConfirmSheet } from './orders/ConfirmSheet'
 import { orderStatus } from './orders/filters'
-import { formatShortDate, todayIso } from './orders/format'
+import { todayIso } from './orders/format'
 import { ItemCard } from './orders/ItemCard'
 import { itemHistory } from './orders/items'
 import { PaymentSheet } from './orders/PaymentSheet'
 import { PriceSheet } from './orders/PriceSheet'
 import { ShippingSheet } from './orders/ShippingSheet'
-import { StepRow } from './orders/StepRow'
-import { bankAccountFrom, openWhatsapp, orderMessage, templatesFrom } from './orders/whatsapp'
+import { OrderMenu } from './orders/OrderMenu'
+import { OrderSteps, type OrderStep } from './orders/OrderSteps'
+import { bankAccountFrom, orderMessage, templatesFrom } from './orders/whatsapp'
 
 type OpenSheet = 'payment' | 'shipping' | 'addItem' | 'price' | 'delete' | null
 
@@ -76,27 +79,55 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
     if (!order.confirmed) await orderRepo.markConfirmed(order.id)
   }
 
-  function writeOnWhatsapp() {
-    const message = orderMessage({
+  // A real link, never window.open: with a features string the browser reads
+  // it as a pop-up and an installed PWA drops it without saying anything.
+  const whatsappHref = whatsappUrl(
+    customer?.whatsapp,
+    orderMessage({
       order,
       customer,
       campaign,
       templates: templatesFrom(stored),
       bankAccount: bankAccountFrom(stored),
       today: todayIso(),
-    })
-    // Opened inside the tap so the browser does not take it for a pop-up.
-    openWhatsapp(customer?.whatsapp, message)
-    void orderRepo.recordContact(order.id)
-  }
+    }),
+  )
 
   async function removeOrder() {
     await orderRepo.remove(order.id)
     back()
   }
 
+  const settled = toCents(balance) <= 0
+  const steps: OrderStep[] = [
+    {
+      label: 'Confirmado',
+      done: order.confirmed,
+      icon: Check,
+      onToggle: () => void orderRepo.markConfirmed(order.id, !order.confirmed),
+    },
+    {
+      label: 'Pagado',
+      done: settled && toCents(total) > 0,
+      icon: DollarSign,
+      onToggle: () => (settled ? void orderRepo.recordPayment(order.id, -paid) : void pay(balance)),
+    },
+    {
+      label: 'Entregado',
+      done: order.deliveredAt !== undefined,
+      icon: Truck,
+      // No way back. Once it left her hands it left, and pretending otherwise
+      // is how a delivered pedido reappears in the list of things to deliver.
+      onToggle: order.deliveredAt ? undefined : () => void orderRepo.markDelivered(order.id),
+    },
+  ]
+
   return (
     <>
+      <HeaderAction>
+        <OrderMenu onDelete={() => setSheet('delete')} />
+      </HeaderAction>
+
       <div className="flex flex-col gap-2 pt-4">
         <Row
           status={orderStatus(order)}
@@ -108,7 +139,7 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
         />
 
         <Card className="flex flex-col gap-3">
-          <span className="text-[0.9375rem] font-bold tracking-widest text-muted uppercase">
+          <span className="text-[0.9375rem] font-semibold text-muted">
             Saldo
           </span>
           <Money value={balance} size="xl" tone={toCents(balance) > 0 ? 'owes' : 'done'} />
@@ -128,31 +159,18 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
           )}
         </Card>
 
+        <OrderSteps steps={steps} />
+
         <BigButton
           floating={false}
           variant="quiet"
           icon={MessageCircle}
-          onClick={writeOnWhatsapp}
+          href={whatsappHref}
+          onClick={() => void orderRepo.recordContact(order.id)}
         >
           WhatsApp
         </BigButton>
       </div>
-
-      <SectionHeader title="Estado" />
-      <Card padded={false} className="divide-y divide-line">
-        <StepRow
-          done={order.confirmed}
-          label={order.confirmed ? 'Confirmado' : 'Confirmar'}
-          onDo={order.confirmed ? undefined : () => void orderRepo.markConfirmed(order.id)}
-          onUndo={() => void orderRepo.markConfirmed(order.id, false)}
-        />
-        <StepRow
-          done={order.deliveredAt !== undefined}
-          label={order.deliveredAt ? 'Entregado' : 'Entregar'}
-          detail={order.deliveredAt ? formatShortDate(order.deliveredAt) : undefined}
-          onDo={order.deliveredAt ? undefined : () => void orderRepo.markDelivered(order.id)}
-        />
-      </Card>
 
       <SectionHeader
         title="Productos"
@@ -183,17 +201,6 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
           subtitle={order.shippingCost > 0 ? formatMoney(order.shippingCost) : 'En Ambato'}
           onClick={() => setSheet('shipping')}
         />
-      </div>
-
-      <div className="pt-10">
-        <BigButton
-          floating={false}
-          variant="danger"
-          icon={Trash2}
-          onClick={() => setSheet('delete')}
-        >
-          Borrar pedido
-        </BigButton>
       </div>
 
       {toCents(balance) > 0 && (

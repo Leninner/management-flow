@@ -39,6 +39,13 @@ export const STATUS_TEXT: Record<Status, string> = {
   done: 'text-done',
 }
 
+/** Darkened for small type sitting on a soft fill. Safe at any size. */
+export const STATUS_INK: Record<Status, string> = {
+  owes: 'text-owes-ink',
+  pending: 'text-pending-ink',
+  done: 'text-done-ink',
+}
+
 export const STATUS_BORDER: Record<Status, string> = {
   owes: 'border-owes',
   pending: 'border-pending',

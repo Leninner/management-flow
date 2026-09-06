@@ -29,7 +29,7 @@ export function Stepper({
   return (
     <div
       className={cx(
-        'inline-flex items-center rounded-2xl border border-line bg-card',
+        'inline-flex items-center gap-1 rounded-full bg-brand-tint p-1',
         className,
       )}
     >
@@ -66,7 +66,7 @@ function StepButton({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-ink active:bg-brand-soft disabled:opacity-30"
+      className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-card text-brand shadow-card active:bg-brand-soft disabled:opacity-30"
     >
       {children}
     </button>

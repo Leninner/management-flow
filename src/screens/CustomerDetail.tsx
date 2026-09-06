@@ -14,6 +14,7 @@ import {
   customers as customerRepo,
   orders as orderRepo,
 } from '../data'
+import { whatsappUrl } from '../content/whatsapp'
 import { carriedDebt, contactsOf, nowIso, normalizeText, orderBalance } from '../domain'
 import {
   BigButton,
@@ -31,7 +32,6 @@ import { EditCustomerSheet } from './customers/EditCustomerSheet'
 import { MergeSheet } from './customers/MergeSheet'
 import { orderStatus, owedBy } from './orders/filters'
 import { orderStateLine, todayIso } from './orders/format'
-import { openWhatsapp } from './orders/whatsapp'
 
 type OpenSheet = 'edit' | 'merge' | null
 
@@ -76,9 +76,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
     void customerRepo.update(customer.id, { aliases: [...aliases, alias] })
   }
 
-  function writeOnWhatsapp() {
-    // Opened inside the tap so the browser does not take it for a pop-up.
-    openWhatsapp(customer.whatsapp, '')
+  function markWritten() {
     void customerRepo.update(customer.id, { contacts: [...contactsOf(customer), nowIso()] })
   }
 
@@ -93,7 +91,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
         />
 
         <Card className="flex flex-col gap-3">
-          <span className="text-[0.9375rem] font-bold tracking-widest text-muted uppercase">
+          <span className="text-[0.9375rem] font-semibold text-muted">
             Debe
           </span>
           <Money value={owed} size="xl" tone={owed > 0 ? 'owes' : 'done'} />
@@ -137,7 +135,11 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
       </div>
 
       {customer.whatsapp && (
-        <BigButton icon={MessageCircle} onClick={writeOnWhatsapp}>
+        <BigButton
+          icon={MessageCircle}
+          href={whatsappUrl(customer.whatsapp, '')}
+          onClick={markWritten}
+        >
           WhatsApp
         </BigButton>
       )}

@@ -49,7 +49,7 @@ export function CampaignHeader({ campaign, today }: { campaign: Campaign; today:
 
   return (
     <Card className={cx('mt-2', SHELL[tone])}>
-      <p className="flex items-center gap-2 text-[0.9375rem] font-bold tracking-widest text-muted uppercase">
+      <p className="flex items-center gap-2 text-[0.9375rem] font-semibold text-muted">
         <CalendarDays size={18} aria-hidden="true" />
         <span className="truncate">Campaña {campaign.name}</span>
       </p>

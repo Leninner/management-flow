@@ -18,7 +18,10 @@ export function StatusDot({ status, size = 'lg', className }: StatusDotProps) {
     return (
       <span
         aria-hidden="true"
-        className={cx('shrink-0 rounded-full border-2 border-line', SIZE[size], className)}
+        // Invisible on purpose: it holds the column so a list where only
+        // some rows have a state still lines up, without drawing a dot that
+        // means nothing.
+        className={cx('shrink-0 rounded-full', SIZE[size], className)}
       />
     )
   }

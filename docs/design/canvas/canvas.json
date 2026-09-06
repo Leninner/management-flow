@@ -1,0 +1,34 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Hoy", "x": 0, "y": 0, "w": 390, "h": 844, "is_interactive": true },
+    { "file": "Anotar.dc.html", "title": "Anotar", "x": 470, "y": 0, "w": 390, "h": 844, "is_interactive": true },
+    { "file": "Pedido.dc.html", "title": "Pedido", "x": 940, "y": 0, "w": 390, "h": 844, "is_interactive": true },
+    { "file": "Mensaje.dc.html", "title": "Mensajes", "x": 1410, "y": 0, "w": 390, "h": 844, "is_interactive": true },
+    { "file": "Sistema.dc.html", "title": "Sistema visual", "x": 0, "y": 1010, "w": 760, "h": 844 },
+    { "file": "Editar.dc.html", "title": "Editar el mensaje", "x": 1410, "y": 1010, "w": 390, "h": 844, "is_interactive": true }
+  ],
+  "annotations": [
+    {
+      "id": "nota-anotar",
+      "x": 470,
+      "y": -210,
+      "w": 390,
+      "text": "Todo en una pantalla: cliente, producto y cantidad.\nSi el producto es nuevo se crea ahí mismo, sin abrir otra ventana, y el precio se puede dejar para después."
+    },
+    {
+      "id": "nota-pedido",
+      "x": 940,
+      "y": -210,
+      "w": 390,
+      "text": "Los tres estados se tocan arriba, sin bajar la pantalla.\nBorrar el pedido vive en el botón de los tres puntos, arriba a la derecha."
+    },
+    {
+      "id": "nota-mensajes",
+      "x": 1410,
+      "y": -210,
+      "w": 390,
+      "text": "El mensaje ya viene escrito con su nombre y su saldo.\nAl editarlo los datos son «nombre» y «saldo», nunca {llaves}."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

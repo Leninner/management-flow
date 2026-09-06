@@ -37,6 +37,7 @@ import { EditCampaignSheet } from './more/EditCampaignSheet'
 import { TextArea } from './more/fields'
 import { formatDay } from './more/format'
 import { NewCampaignSheet } from './more/NewCampaignSheet'
+import { previewTemplate } from './more/preview'
 import { RestoreSheet } from './more/RestoreSheet'
 import { TemplateSheet } from './more/TemplateSheet'
 import { firstLine, resolveTemplates, templateSettingKey, type EditableTemplate } from './more/templates'
@@ -144,6 +145,9 @@ export function More() {
             subtitle="Guarda el respaldo seguido"
           />
         )}
+        <BigButton floating={false} icon={saved ? Check : Download} onClick={saveBackup}>
+          {saved ? 'Guardado' : 'Guardar respaldo'}
+        </BigButton>
       </div>
 
       <SectionHeader title="Mensajes" />
@@ -153,7 +157,7 @@ export function More() {
             key={entry.template.key}
             icon={MessageCircle}
             title={entry.template.label}
-            subtitle={firstLine(entry.body)}
+            subtitle={firstLine(previewTemplate(entry.body, bankAccount))}
             onClick={() => setEditing(entry)}
           />
         ))}
@@ -201,6 +205,7 @@ export function More() {
 
       <TemplateSheet
         template={editing}
+        bankAccount={bankAccount}
         onClose={() => setEditing(null)}
         onSave={saveTemplate}
       />
@@ -243,9 +248,6 @@ export function More() {
         unconfirmedCount={unconfirmedCount}
       />
 
-      <BigButton icon={saved ? Check : Download} onClick={saveBackup}>
-        {saved ? 'Guardado' : 'Guardar respaldo'}
-      </BigButton>
     </>
   )
 }

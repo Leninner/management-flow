@@ -1,5 +1,5 @@
 import { cx } from './cx'
-import { STATUS_LABEL, STATUS_SOFT, STATUS_SOLID, type Status } from './status'
+import { STATUS_INK, STATUS_LABEL, STATUS_SOFT, STATUS_SOLID, type Status } from './status'
 
 export interface StatusPillProps {
   status: Status
@@ -16,8 +16,9 @@ export function StatusPill({ status, label, className }: StatusPillProps) {
   return (
     <span
       className={cx(
-        'inline-flex min-h-8 items-center gap-2 rounded-full px-3 text-[0.9375rem] font-semibold text-ink',
+        'inline-flex min-h-8 items-center gap-2 rounded-full px-3 text-[0.9375rem] font-bold',
         STATUS_SOFT[status],
+        STATUS_INK[status],
         className,
       )}
     >

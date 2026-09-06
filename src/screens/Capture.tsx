@@ -1,19 +1,31 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { CalendarDays, Check, Users } from 'lucide-react'
+import { CalendarDays, Check, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { campaigns, orders } from '../data'
+import { campaigns, customers as customerRepo, orders } from '../data'
 import type { Campaign, Customer, Order } from '../db/types'
 import type { PastItem } from '../domain'
 import { normalizeName } from '../domain'
-import { BigButton, Card, EmptyState, Row, SectionHeader, Stepper, useNavigation } from '../ui'
+import {
+  BigButton,
+  Card,
+  EmptyState,
+  formatMoney,
+  SectionHeader,
+  Stepper,
+  useNavigation,
+} from '../ui'
 import { CapturedList, type CaptureEntry } from './capture/CapturedList'
-import { CustomerStep } from './capture/CustomerStep'
+import { Avatar, CustomerStep } from './capture/CustomerStep'
 import { ProductStep, type ChosenProduct } from './capture/ProductStep'
 import { firstName } from './today/format'
+
+/** How many faces fit on the recent row without it turning into a directory. */
+const RECENT = 8
 
 interface CaptureData {
   campaign: Campaign | undefined
   orderList: Order[]
+  customerList: Customer[]
 }
 
 /**
@@ -23,6 +35,9 @@ interface CaptureData {
  * written down. No money, no address, no delivery, no payment. All of that is
  * marked afterwards from another screen. A payment field here is what makes
  * her freeze in front of the camera.
+ *
+ * It is one screen, not a wizard. Who, what, how many and the button all live
+ * in the same scroll, and nothing she can pick opens a sheet on top of it.
  */
 export function Capture() {
   const { go } = useNavigation()
@@ -34,8 +49,12 @@ export function Capture() {
   const [saving, setSaving] = useState(false)
 
   const data = useLiveQuery<CaptureData>(async () => {
-    const [campaign, orderList] = await Promise.all([campaigns.getActive(), orders.listAll()])
-    return { campaign, orderList }
+    const [campaign, orderList, customerList] = await Promise.all([
+      campaigns.getActive(),
+      orders.listAll(),
+      customerRepo.list(),
+    ])
+    return { campaign, orderList, customerList }
   }, [])
 
   const orderList = data?.orderList
@@ -50,6 +69,24 @@ export function Capture() {
     }
     return past
   }, [orderList])
+
+  // Who she sold to last, newest first. Recency beats alphabetical here: the
+  // people buying in this live are the people who bought in the last one.
+  const recent = useMemo<Customer[]>(() => {
+    const byId = new Map((data?.customerList ?? []).map((entry) => [entry.id, entry]))
+    const seen = new Set<string>()
+    const list: Customer[] = []
+    for (const order of [...(orderList ?? [])].sort((a, b) =>
+      b.createdAt.localeCompare(a.createdAt),
+    )) {
+      if (seen.has(order.customerId)) continue
+      seen.add(order.customerId)
+      const found = byId.get(order.customerId)
+      if (found) list.push(found)
+      if (list.length === RECENT) break
+    }
+    return list
+  }, [orderList, data?.customerList])
 
   const campaign = data?.campaign
 
@@ -102,6 +139,12 @@ export function Capture() {
     setCaptures((current) => current.filter((item) => item.key !== entry.key))
   }
 
+  function changeCustomer() {
+    setCustomer(null)
+    setProduct(null)
+    setQuantity(1)
+  }
+
   if (!data) return null
 
   if (!campaign) {
@@ -118,43 +161,57 @@ export function Capture() {
   return (
     <>
       {!customer ? (
-        <CustomerStep onPick={setCustomer} />
+        <CustomerStep recent={recent} onPick={setCustomer} />
       ) : (
         <>
-          <div className="pt-2">
-            <Row
-              icon={Users}
-              title={customer.name}
-              onClick={() => {
-                setCustomer(null)
-                setProduct(null)
-                setQuantity(1)
-              }}
-              trailing={<span className="text-[1.0625rem] font-semibold text-brand">Cambiar</span>}
-            />
+          <div className="mt-3 flex items-center gap-3 rounded-full bg-card p-1.5 pl-2 shadow-card">
+            <Avatar name={customer.name} />
+            <span className="min-w-0 flex-1 truncate text-[1.1875rem] font-bold">
+              {customer.name}
+            </span>
+            <button
+              type="button"
+              onClick={changeCustomer}
+              aria-label="Cambiar de cliente"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-tint text-muted active:bg-brand-soft"
+            >
+              <X size={20} aria-hidden="true" />
+            </button>
           </div>
 
-          <div className="mt-3">
-            {!product ? (
-              <ProductStep history={history} onChoose={setProduct} />
-            ) : (
-              <Card className="flex items-center justify-between gap-3">
+          {!product ? (
+            <ProductStep history={history} onChoose={setProduct} />
+          ) : (
+            <Card className="mt-5 flex flex-col gap-4">
+              <div className="flex items-start gap-3">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xl leading-tight font-bold">{product.name}</span>
+                  {product.price > 0 ? (
+                    <span className="money mt-1.5 block text-[1.0625rem] font-bold text-brand">
+                      {formatMoney(product.price)}
+                    </span>
+                  ) : (
+                    <span className="mt-2 inline-flex items-center rounded-full bg-pending-soft px-3 py-1 text-[0.875rem] font-bold text-pending-ink">
+                      Falta el precio
+                    </span>
+                  )}
+                </span>
                 <button
                   type="button"
                   onClick={() => setProduct(null)}
-                  className="min-w-0 flex-1 text-left"
+                  aria-label="Cambiar de producto"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-tint text-muted active:bg-brand-soft"
                 >
-                  <span className="block truncate text-xl leading-tight font-semibold">
-                    {product.name}
-                  </span>
-                  <span className="mt-1 block text-[0.9375rem] font-semibold text-brand">
-                    Cambiar
-                  </span>
+                  <X size={20} aria-hidden="true" />
                 </button>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
+                <span className="text-[1.0625rem] font-semibold text-muted">Cantidad</span>
                 <Stepper value={quantity} onChange={setQuantity} />
-              </Card>
-            )}
-          </div>
+              </div>
+            </Card>
+          )}
         </>
       )}
 

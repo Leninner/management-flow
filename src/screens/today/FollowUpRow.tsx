@@ -4,13 +4,13 @@ import { customers, orders } from '../../data'
 import type { Campaign, Customer, Order, Setting } from '../../db/types'
 import type { FollowUp } from '../../domain'
 import { nowIso, orderBalance, orderBalanceCents, orderTotal } from '../../domain'
+import { whatsappUrl } from '../../content/whatsapp'
 import { Row, RowAction } from '../../ui'
 import { daysLabel } from './format'
 import {
   bankAccount,
   FOLLOW_UP_REASON,
   FOLLOW_UP_STATUS,
-  openWhatsapp,
   renderFollowUpMessage,
 } from './messages'
 
@@ -43,20 +43,20 @@ export function FollowUpRow({
   const amount = pendingAmount(followUp, order)
   const subtitle = `${FOLLOW_UP_REASON[followUp.templateKey]}, ${daysLabel(followUp.daysWaiting)}`
 
-  function write() {
-    openWhatsapp(
+  // A real link, never window.open: with a features string the browser reads
+  // it as a pop-up and an installed PWA drops it without saying anything.
+  const whatsappHref = whatsappUrl(
+    customer.whatsapp,
+    renderFollowUpMessage({
+      followUp,
       customer,
-      renderFollowUpMessage({
-        followUp,
-        customer,
-        order,
-        campaign,
-        templates,
-        account: bankAccount(settingList),
-        today,
-      }),
-    )
-  }
+      order,
+      campaign,
+      templates,
+      account: bankAccount(settingList),
+      today,
+    }),
+  )
 
   async function markWritten() {
     if (writing) return
@@ -83,7 +83,7 @@ export function FollowUpRow({
       amount={amount}
       actions={
         <>
-          <RowAction icon={MessageCircle} onClick={write}>
+          <RowAction icon={MessageCircle} href={whatsappHref}>
             WhatsApp
           </RowAction>
           <RowAction icon={Check} onClick={markWritten}>

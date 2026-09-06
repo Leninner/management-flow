@@ -7,13 +7,13 @@
  * loses — and carry the campaign name so she knows it is an old one.
  */
 import { useLiveQuery } from 'dexie-react-hooks'
-import { CheckCheck, Package, PackageCheck, ShoppingBag, Truck } from 'lucide-react'
+import { CheckCheck, PackageCheck, ShoppingBag, Truck } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 import { campaigns as campaignRepo, customers as customerRepo, orders as orderRepo } from '../data'
 import type { Campaign, Order } from '../db/types'
 import { orderBalance } from '../domain'
-import { BigButton, EmptyState, Money, Row, SectionHeader, useNavigation } from '../ui'
+import { EmptyState, Money, Row, SectionHeader, useNavigation } from '../ui'
 import { FilterTiles } from './orders/FilterTiles'
 import {
   countByFilter,
@@ -99,9 +99,6 @@ export function Orders({ initialFilter }: OrdersProps) {
         </>
       )}
 
-      <BigButton icon={Package} onClick={() => push({ kind: 'capture' })}>
-        Capturar pedido
-      </BigButton>
     </>
   )
 }

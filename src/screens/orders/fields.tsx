@@ -6,8 +6,8 @@
 import type { KeyboardEvent } from 'react'
 import { cx } from '../../ui'
 
-const LABEL = 'block px-1 pb-1 text-[0.9375rem] font-bold tracking-widest text-muted uppercase'
-const BOX = 'flex items-center rounded-2xl border border-line bg-card focus-within:border-brand'
+const LABEL = 'block px-1 pb-2 text-[0.9375rem] font-semibold text-muted'
+const BOX = 'flex items-center rounded-field border-2 border-line bg-card focus-within:border-brand'
 
 export interface TextFieldProps {
   label: string

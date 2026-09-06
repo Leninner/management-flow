@@ -1,5 +1,5 @@
 import { cx } from './cx'
-import { STATUS_SOFT, type Status } from './status'
+import { STATUS_INK, STATUS_SOFT, type Status } from './status'
 
 export interface CountBadgeProps {
   count: number
@@ -15,7 +15,7 @@ export function CountBadge({ count, tone, variant = 'soft', className }: CountBa
     variant === 'alert'
       ? 'bg-owes text-white'
       : tone
-        ? cx(STATUS_SOFT[tone], 'text-ink')
+        ? cx(STATUS_SOFT[tone], STATUS_INK[tone])
         : 'bg-brand-soft text-brand'
 
   return (

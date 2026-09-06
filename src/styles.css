@@ -3,30 +3,48 @@
 /*
  * Visual identity. The rule is that a screen must be understandable at a
  * glance, without reading: big numbers, small labels, colour carries state.
+ *
+ * Purple, because the app belongs to one person and it should feel like hers
+ * rather than like a form. The type is the system face on purpose: on her
+ * iPhone that is the same font as Mensajes and Ajustes, so nothing here reads
+ * as foreign.
  */
 @theme {
-  /* Cream instead of pure white: less glare when using the phone outdoors. */
-  --color-paper: #fdfbf7;
+  /* Barely tinted lavender instead of pure white: less glare, and it makes a
+     plain white card read as raised without needing a border. */
+  --color-paper: #f7f5fc;
   --color-card: #ffffff;
-  --color-ink: #1c1917;
-  --color-muted: #78716c;
-  --color-line: #e7e2d9;
+  --color-ink: #1b1630;
+  --color-muted: #857d9b;
+  --color-line: #ece7f6;
 
-  /* Plum. Deliberately off the state colours so it never reads as a status. */
-  --color-brand: #7c2d5a;
-  --color-brand-soft: #f7ecf2;
+  /* Violet. Deliberately off the state colours so it never reads as a status. */
+  --color-brand: #5b2fe3;
+  --color-brand-dark: #4522b5;
+  --color-brand-soft: #efe9ff;
+  --color-brand-tint: #f6f2ff;
 
   /* The three states. Learned once, instead of nine words read every time. */
-  --color-owes: #dc2626;
-  --color-pending: #d97706;
-  --color-done: #16a34a;
-  --color-owes-soft: #fee2e2;
-  --color-pending-soft: #fef3c7;
-  --color-done-soft: #dcfce7;
+  --color-owes: #e11d48;
+  --color-pending: #f08c00;
+  --color-done: #12b36a;
+  --color-owes-soft: #ffe7ec;
+  --color-pending-soft: #fff1d9;
+  --color-done-soft: #ddf7ea;
+  /* Darkened for small type on the soft fills, where the saturated tone fails. */
+  --color-owes-ink: #8a0f2e;
+  --color-pending-ink: #8a5300;
+  --color-done-ink: #08663b;
 
   --text-base: 1.0625rem; /* 17px floor for readability */
 
-  --radius-card: 1rem;
+  --radius-card: 1.375rem;
+  --radius-field: 1.125rem;
+
+  /* Purple-tinted, never grey: a grey shadow on lavender looks like dirt. */
+  --shadow-card: 0 2px 10px rgba(60, 30, 140, 0.06);
+  --shadow-lift: 0 10px 24px rgba(91, 47, 227, 0.3);
+  --shadow-pop: 0 18px 40px rgba(40, 20, 90, 0.22);
 }
 
 html {
@@ -39,11 +57,20 @@ body {
   background: var(--color-paper);
   color: var(--color-ink);
   font-size: var(--text-base);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
+}
+
+/* Headlines tighten the way the system face does on iOS. */
+h1,
+h2 {
+  letter-spacing: -0.02em;
 }
 
 /* Tabular figures everywhere money is shown, so columns of amounts line up. */
 .money {
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }

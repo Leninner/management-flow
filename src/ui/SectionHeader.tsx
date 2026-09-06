@@ -13,8 +13,8 @@ export interface SectionHeaderProps {
 
 export function SectionHeader({ title, count, action, className }: SectionHeaderProps) {
   return (
-    <div className={cx('flex items-center gap-2 px-1 pt-6 pb-2', className)}>
-      <h2 className="text-[0.9375rem] font-bold tracking-widest text-muted uppercase">{title}</h2>
+    <div className={cx('flex items-center gap-2 px-1 pt-7 pb-2.5', className)}>
+      <h2 className="text-[0.9375rem] font-bold">{title}</h2>
       {count !== undefined && <CountBadge count={count} />}
       {action && <div className="ml-auto">{action}</div>}
     </div>

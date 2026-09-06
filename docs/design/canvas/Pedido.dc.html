@@ -1,0 +1,275 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    sc-for, sc-if { display: contents; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #5B2FE3; text-decoration: none; }
+    a:hover { color: #4522B5; }
+    button { font: inherit; border: 0; background: none; cursor: pointer; color: inherit; }
+    .num { font-variant-numeric: tabular-nums; }
+    .noscroll::-webkit-scrollbar { display: none; }
+  </style>
+</helmet>
+
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F7F5FC; color: #1B1630;">
+
+  <div style="height: 62px; display: flex; align-items: center; gap: 4px; padding: 14px 12px 0;">
+    <button aria-label="Volver" style="width: 40px; height: 40px; flex: 0 0 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #5B2FE3;">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5 8 12l7 7"></path></svg>
+    </button>
+    <span style="flex: 1 1 auto; font-size: 20px; font-weight: 700; letter-spacing: -0.4px;">Pedido</span>
+    <button onClick="{{toggleMenu}}" aria-label="Más opciones" style="width: 40px; height: 40px; flex: 0 0 40px; border-radius: 999px; background: #FFFFFF; color: #5B2FE3; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(60,30,140,0.07);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.9"></circle><circle cx="12" cy="12" r="1.9"></circle><circle cx="18.5" cy="12" r="1.9"></circle></svg>
+    </button>
+  </div>
+
+  <div class="noscroll" style="position: absolute; top: 62px; left: 0; right: 0; bottom: 0; overflow-y: auto; padding: 6px 20px 124px; scrollbar-width: none;">
+
+    <div style="display: flex; align-items: center; gap: 12px; background: #FFFFFF; border-radius: 22px; padding: 12px 14px; box-shadow: 0 2px 10px rgba(60,30,140,0.06);">
+      <span style="width: 46px; height: 46px; flex: 0 0 46px; border-radius: 999px; background: #F1ECFF; color: #5B2FE3; font-size: 19px; font-weight: 700; display: flex; align-items: center; justify-content: center;">K</span>
+      <span style="min-width: 0; flex: 1 1 auto;">
+        <span style="display: block; font-size: 18px; font-weight: 700; letter-spacing: -0.3px;">Karla Pérez</span>
+        <span style="display: block; font-size: 13px; color: #857D9B; margin-top: 1px;">Campaña C13 · 098 445 2210</span>
+      </span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7BEE0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 18px; margin-top: 12px; box-shadow: 0 2px 10px rgba(60,30,140,0.06);">
+      <div style="font-size: 13px; font-weight: 700; color: #857D9B;">{{balanceLabel}}</div>
+      <div class="num" style="font-size: 46px; font-weight: 700; letter-spacing: -1.8px; line-height: 1.05; margin-top: 4px; color: {{balanceTone}};">{{balance}}</div>
+      <div style="display: flex; gap: 18px; margin-top: 10px;">
+        <span style="font-size: 14px; color: #857D9B;">Total <b class="num" style="color: #1B1630; font-weight: 700;">{{total}}</b></span>
+        <span style="font-size: 14px; color: #857D9B;">Abonado <b class="num" style="color: #1B1630; font-weight: 700;">{{paid}}</b></span>
+      </div>
+    </div>
+
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 18px 12px 14px; margin-top: 12px; box-shadow: 0 2px 10px rgba(60,30,140,0.06);">
+      <div style="position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));">
+        <div style="position: absolute; left: 16.7%; right: 16.7%; top: 22px; height: 3px; border-radius: 999px; background: #EDE8F8;"></div>
+        <div style="position: absolute; left: 16.7%; top: 22px; height: 3px; border-radius: 999px; background: #12B36A; width: {{progress}};"></div>
+        <sc-for list="{{steps}}" as="s" hint-placeholder-count="3">
+          <button onClick="{{s.toggle}}" style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 0 2px;">
+            <span style="width: 47px; height: 47px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {{s.bg}}; color: {{s.fg}}; border: 2.5px solid {{s.ring}};">
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{s.stroke}}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.d}}"></path></svg>
+            </span>
+            <span style="font-size: 13px; font-weight: {{s.weight}}; color: {{s.labelColor}};">{{s.label}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px; margin: 24px 2px 10px;">
+      <span style="font-size: 15px; font-weight: 700;">Productos</span>
+      <span class="num" style="font-size: 13px; font-weight: 700; color: #5B2FE3; background: #EFE9FF; padding: 3px 9px; border-radius: 999px;">{{itemCount}}</span>
+      <span class="num" style="margin-left: auto; font-size: 17px; font-weight: 700; letter-spacing: -0.3px;">{{subtotal}}</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <sc-for list="{{items}}" as="i" hint-placeholder-count="3">
+        <div style="background: #FFFFFF; border-radius: 20px; padding: 13px 12px 13px 16px; box-shadow: 0 2px 8px rgba(60,30,140,0.05);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="min-width: 0; flex: 1 1 auto;">
+              <span style="display: block; font-size: 16px; font-weight: 600; line-height: 1.3;">{{i.name}}</span>
+              <sc-if value="{{i.hasPrice}}" hint-placeholder-val="{{true}}">
+                <span class="num" style="display: inline-block; font-size: 14px; font-weight: 600; color: #857D9B; margin-top: 3px;">{{i.priceLine}}</span>
+              </sc-if>
+              <sc-if value="{{i.noPrice}}" hint-placeholder-val="{{false}}">
+                <button style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #8A5300; background: #FFF1D9; padding: 5px 11px; border-radius: 999px; margin-top: 6px;">
+                  Ponerle precio
+                </button>
+              </sc-if>
+            </span>
+            <span style="display: flex; align-items: center; gap: 2px; background: #F7F5FC; border-radius: 999px; padding: 3px;">
+              <button onClick="{{i.less}}" aria-label="Quitar uno" style="width: 40px; height: 40px; border-radius: 999px; background: #FFFFFF; color: #5B2FE3; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(60,30,140,0.10);">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"></path></svg>
+              </button>
+              <span class="num" style="min-width: 32px; text-align: center; font-size: 20px; font-weight: 700;">{{i.qty}}</span>
+              <button onClick="{{i.more}}" aria-label="Agregar uno" style="width: 40px; height: 40px; border-radius: 999px; background: #FFFFFF; color: #5B2FE3; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(60,30,140,0.10);">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 6v12M6 12h12"></path></svg>
+              </button>
+            </span>
+          </div>
+        </div>
+      </sc-for>
+
+      <button style="display: flex; align-items: center; gap: 12px; min-height: 58px; background: #FFFFFF; border: 1.5px dashed #DCD2F7; border-radius: 20px; padding: 0 16px; text-align: left;">
+        <span style="width: 34px; height: 34px; flex: 0 0 34px; border-radius: 999px; background: #EFE9FF; color: #5B2FE3; display: flex; align-items: center; justify-content: center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+        </span>
+        <span style="font-size: 16px; font-weight: 600; color: #4522B5;">Agregar producto</span>
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 12px; min-height: 58px; background: #FFFFFF; border-radius: 20px; padding: 0 16px; box-shadow: 0 2px 8px rgba(60,30,140,0.05);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#857D9B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5h10v9H3zM13 11h4l3 3v2.5h-7zM7 20a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6ZM17.5 20a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6Z"></path></svg>
+        <span style="flex: 1 1 auto; font-size: 16px; font-weight: 600;">Envío</span>
+        <span class="num" style="font-size: 16px; font-weight: 700; color: #857D9B;">{{shipping}}</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 28px 20px 26px; background: linear-gradient(to top, #F7F5FC 62%, rgba(247,245,252,0));">
+    <button onClick="{{primary.act}}" style="width: 100%; min-height: 58px; border-radius: 999px; background: {{primary.bg}}; color: #FFFFFF; font-size: 19px; font-weight: 700; letter-spacing: -0.2px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 10px 24px rgba(91,47,227,0.28);">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{primary.d}}"></path></svg>
+      {{primary.label}}
+    </button>
+  </div>
+
+  <sc-if value="{{menuOpen}}" hint-placeholder-val="{{true}}">
+    <div>
+      <button onClick="{{toggleMenu}}" aria-label="Cerrar" style="position: absolute; inset: 0; background: rgba(27,22,48,0.18);"></button>
+      <div style="position: absolute; top: 58px; right: 14px; width: 234px; background: #FFFFFF; border-radius: 20px; padding: 6px; box-shadow: 0 18px 40px rgba(40,20,90,0.22);">
+        <button style="display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px; padding: 0 12px; border-radius: 14px; text-align: left; font-size: 16px; font-weight: 600;">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#5B2FE3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5h10v9H3zM13 11h4l3 3v2.5h-7z"></path></svg>
+          Cambiar el envío
+        </button>
+        <button style="display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px; padding: 0 12px; border-radius: 14px; text-align: left; font-size: 16px; font-weight: 600;">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#5B2FE3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.4 11.6a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM3.4 20a6 6 0 0 1 12 0"></path></svg>
+          Ver a Karla
+        </button>
+        <div style="height: 1px; background: #F0ECF9; margin: 5px 12px;"></div>
+        <button style="display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px; padding: 0 12px; border-radius: 14px; text-align: left; font-size: 16px; font-weight: 700; color: #E11D48;">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.8 7l.9 12.4h8.6L17.2 7"></path></svg>
+          Borrar el pedido
+        </button>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+const CHECK = 'm5 12.5 4.5 4.5L19 7.5'
+const COIN = 'M12 4v16M15.6 7.6H10.2a2.8 2.8 0 0 0 0 5.6h3.6a2.8 2.8 0 0 1 0 5.6H8'
+const TRUCK = 'M3 7.5h10v9H3zM13 11h4l3 3v2.5h-7zM7 20a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6ZM17.5 20a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6Z'
+const CHAT = 'M20.5 11.6a8.2 8.2 0 0 1-11.9 7.3L3.5 20.5l1.6-5.1a8.2 8.2 0 1 1 15.4-3.8Z'
+
+const PARTIAL = 32
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props)
+    this.state = {
+      confirmed: true,
+      delivered: false,
+      paidAmount: PARTIAL,
+      menuOpen: false,
+      items: [
+        { id: 'i1', name: '38588 Novage Ultimate Lift', price: 32.9, qty: 1 },
+        { id: 'i2', name: '41720 Giordani Gold labial', price: 9.9, qty: 2 },
+        { id: 'i3', name: '33961 Love Nature shampoo', price: null, qty: 1 },
+      ],
+    }
+  }
+
+  money(value) {
+    return '$' + value.toFixed(2)
+  }
+
+  subtotal() {
+    return this.state.items.reduce((sum, i) => sum + (i.price === null ? 0 : i.price * i.qty), 0)
+  }
+
+  total() {
+    return this.subtotal() + 1.6
+  }
+
+  setQty(id, delta) {
+    this.setState({
+      items: this.state.items.map((i) =>
+        i.id === id ? { ...i, qty: Math.max(1, Math.min(99, i.qty + delta)) } : i,
+      ),
+    })
+  }
+
+  step(label, done, d, toggle) {
+    return {
+      label,
+      d: done ? CHECK : d,
+      stroke: done ? 2.9 : 2,
+      bg: done ? '#12B36A' : '#FFFFFF',
+      fg: done ? '#FFFFFF' : '#BDB3D8',
+      ring: done ? '#12B36A' : '#E7E1F5',
+      labelColor: done ? '#1B1630' : '#857D9B',
+      weight: done ? 700 : 600,
+      toggle,
+    }
+  }
+
+  renderVals() {
+    const s = this.state
+    const total = this.total()
+    const balance = Math.max(0, total - s.paidAmount)
+    const settled = balance < 0.005
+
+    const steps = [
+      this.step('Confirmado', s.confirmed, CHECK, () => this.setState({ confirmed: !s.confirmed })),
+      this.step('Pagado', settled, COIN, () =>
+        this.setState({ paidAmount: settled ? PARTIAL : total, confirmed: true }),
+      ),
+      this.step('Entregado', s.delivered, TRUCK, () => this.setState({ delivered: !s.delivered })),
+    ]
+    const doneCount = (s.confirmed ? 1 : 0) + (settled ? 1 : 0) + (s.delivered ? 1 : 0)
+    const reached = s.confirmed ? (settled ? (s.delivered ? 2 : 1) : 0) : 0
+
+    let primary
+    if (!settled) {
+      primary = {
+        label: 'Cobrar ' + this.money(balance),
+        d: COIN,
+        bg: '#5B2FE3',
+        act: () => this.setState({ paidAmount: total, confirmed: true }),
+      }
+    } else if (!s.delivered) {
+      primary = {
+        label: 'Marcar entregado',
+        d: TRUCK,
+        bg: '#5B2FE3',
+        act: () => this.setState({ delivered: true }),
+      }
+    } else {
+      primary = { label: 'Escribir por WhatsApp', d: CHAT, bg: '#12B36A', act: () => {} }
+    }
+
+    return {
+      balance: settled ? this.money(0) : this.money(balance),
+      balanceLabel: settled ? 'Está al día' : 'Le falta pagar',
+      balanceTone: settled ? '#12B36A' : '#E11D48',
+      total: this.money(total),
+      paid: this.money(Math.min(s.paidAmount, total)),
+      subtotal: this.money(this.subtotal()),
+      shipping: this.money(1.6),
+      itemCount: s.items.length,
+      steps,
+      doneCount,
+      progress: (reached / 2) * 66.6 + '%',
+      primary,
+      menuOpen: s.menuOpen,
+      toggleMenu: () => this.setState({ menuOpen: !s.menuOpen }),
+      items: s.items.map((i) => ({
+        name: i.name,
+        qty: i.qty,
+        hasPrice: i.price !== null,
+        noPrice: i.price === null,
+        priceLine: i.price === null ? '' : this.money(i.price) + ' c/u · ' + this.money(i.price * i.qty),
+        less: () => this.setQty(i.id, -1),
+        more: () => this.setQty(i.id, 1),
+      })),
+    }
+  }
+}
+</script>
+</body>
+</html>

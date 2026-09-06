@@ -30,8 +30,8 @@ export function CapturedList({
       {entries.map((entry) => (
         <Row
           key={entry.key}
-          title={entry.customerName}
-          subtitle={entry.itemName}
+          title={entry.itemName}
+          subtitle={entry.customerName}
           count={entry.quantity}
           trailing={
             <button

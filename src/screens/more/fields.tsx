@@ -7,7 +7,7 @@ import type { ReactNode, Ref } from 'react'
 import { Card, cx } from '../../ui'
 
 const FIELD =
-  'w-full rounded-2xl border border-line bg-card text-[1.1875rem] text-ink outline-none placeholder:text-muted focus:border-brand'
+  'w-full rounded-field border-2 border-line bg-card text-[1.1875rem] text-ink outline-none placeholder:text-muted focus:border-brand'
 
 export function TextField({
   value,
@@ -24,7 +24,7 @@ export function TextField({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="px-1 text-[0.9375rem] font-bold tracking-widest text-muted uppercase">
+      <span className="px-1 text-[0.9375rem] font-semibold text-muted">
         {label}
       </span>
       <input
@@ -86,7 +86,7 @@ export function Chip({ children, onClick }: { children: ReactNode; onClick: () =
     <button
       type="button"
       onClick={onClick}
-      className="money inline-flex min-h-11 items-center rounded-full bg-brand-soft px-3.5 text-base font-semibold text-brand active:bg-brand active:text-white"
+      className="inline-flex min-h-11 items-center rounded-full bg-brand-soft px-4 text-base font-bold text-brand-dark active:bg-brand active:text-white"
     >
       {children}
     </button>

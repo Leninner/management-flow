@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    sc-for, sc-if { display: contents; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #5B2FE3; text-decoration: none; }
+    a:hover { color: #4522B5; }
+    button { font: inherit; border: 0; background: none; cursor: pointer; color: inherit; }
+    textarea { font: inherit; border: 0; outline: 0; background: none; color: inherit; width: 100%; resize: none; }
+    .noscroll::-webkit-scrollbar { display: none; }
+  </style>
+</helmet>
+
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F7F5FC; color: #1B1630;">
+
+  <div style="height: 62px; display: flex; align-items: center; gap: 4px; padding: 14px 14px 0;">
+    <button aria-label="Cerrar" style="width: 40px; height: 40px; flex: 0 0 40px; border-radius: 999px; background: #FFFFFF; color: #6B6383; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(60,30,140,0.07);">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+    </button>
+    <span style="flex: 1 1 auto; font-size: 20px; font-weight: 700; letter-spacing: -0.4px; padding-left: 6px;">Cobrar el saldo</span>
+  </div>
+
+  <div class="noscroll" style="position: absolute; top: 62px; left: 0; right: 0; bottom: 0; overflow-y: auto; padding: 8px 20px 152px; scrollbar-width: none;">
+
+    <div style="background: #FFFFFF; border: 1.5px solid #DCD2F7; border-radius: 22px; padding: 16px; box-shadow: 0 2px 10px rgba(60,30,140,0.06);">
+      <textarea value="{{draft}}" onChange="{{onDraft}}" rows="6" aria-label="El mensaje" style="font-size: 16px; line-height: 1.5; min-height: 132px;"></textarea>
+    </div>
+
+    <div style="font-size: 15px; font-weight: 700; margin: 22px 2px 10px;">Agregar un dato</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+      <sc-for list="{{tokens}}" as="t" hint-placeholder-count="5">
+        <button onClick="{{t.insert}}" style="display: flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 15px; border-radius: 999px; background: #EFE9FF; color: #4522B5; font-size: 15px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+          {{t.label}}
+        </button>
+      </sc-for>
+    </div>
+
+    <div style="font-size: 15px; font-weight: 700; margin: 24px 2px 10px;">Así le llega a Karla</div>
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 16px; box-shadow: 0 2px 10px rgba(60,30,140,0.06);">
+      <div style="display: flex; justify-content: flex-end;">
+        <div style="max-width: 290px; background: #EFE9FF; border-radius: 20px 20px 6px 20px; padding: 14px 16px;">
+          <span style="display: block; font-size: 16px; line-height: 1.45; white-space: pre-line; color: #241A47;">{{preview}}</span>
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{changed}}" hint-placeholder-val="{{true}}">
+      <button onClick="{{reset}}" style="display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 50px; margin-top: 18px; border-radius: 999px; background: #FFFFFF; color: #6B6383; font-size: 16px; font-weight: 700; box-shadow: 0 2px 8px rgba(60,30,140,0.05);">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 11a7.6 7.6 0 1 1 2.3 6M4.5 5.5V11h5.5"></path></svg>
+        Volver a la original
+      </button>
+    </sc-if>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 30px 20px 26px; background: linear-gradient(to top, #F7F5FC 66%, rgba(247,245,252,0));">
+    <button style="width: 100%; min-height: 58px; border-radius: 999px; background: #5B2FE3; color: #FFFFFF; font-size: 19px; font-weight: 700; letter-spacing: -0.2px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 10px 24px rgba(91,47,227,0.30);">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg>
+      Guardar
+    </button>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+const ORIGINAL = '«nombre», de tu pedido quedan «saldo».\n«mi cuenta»\nCuando hagas la transferencia me mandas la captura y te confirmo.'
+
+const TOKENS = [
+  { label: 'nombre', value: 'Karla' },
+  { label: 'saldo', value: '$22.30' },
+  { label: 'total', value: '$54.30' },
+  { label: 'fecha de corte', value: '8 de septiembre' },
+  { label: 'mi cuenta', value: '[TUS DATOS BANCARIOS]' },
+  { label: 'lo que se lleva', value: '• 1x 38588 Novage Ultimate Lift\n• 2x 41720 Giordani Gold labial' },
+]
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props)
+    this.state = { draft: ORIGINAL }
+  }
+
+  renderVals() {
+    const draft = this.state.draft
+    let preview = draft
+    for (const token of TOKENS) {
+      preview = preview.split('«' + token.label + '»').join(token.value)
+    }
+
+    return {
+      draft,
+      preview,
+      changed: draft !== ORIGINAL,
+      onDraft: (event) => this.setState({ draft: event.target.value }),
+      reset: () => this.setState({ draft: ORIGINAL }),
+      tokens: TOKENS.map((token) => ({
+        label: token.label,
+        insert: () =>
+          this.setState({
+            draft: (this.state.draft.replace(/\s+$/, '') + ' «' + token.label + '»').trim(),
+          }),
+      })),
+    }
+  }
+}
+</script>
+</body>
+</html>

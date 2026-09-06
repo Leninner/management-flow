@@ -1,0 +1,194 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    sc-for, sc-if { display: contents; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #5B2FE3; text-decoration: none; }
+    a:hover { color: #4522B5; }
+    button { font: inherit; border: 0; background: none; cursor: pointer; color: inherit; }
+    .num { font-variant-numeric: tabular-nums; }
+    .noscroll::-webkit-scrollbar { display: none; }
+  </style>
+</helmet>
+
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F7F5FC; color: #1B1630;">
+
+  <div class="noscroll" style="height: 844px; overflow-y: auto; padding-bottom: 128px; scrollbar-width: none;">
+
+    <div style="padding: 28px 20px 0;">
+      <div style="font-size: 13px; font-weight: 600; color: #857D9B;">viernes 5 de septiembre</div>
+      <div style="font-size: 34px; font-weight: 700; letter-spacing: -0.8px; margin-top: 2px;">Hoy</div>
+    </div>
+
+    <div style="margin: 18px 20px 0; padding: 20px; border-radius: 26px; color: #FFFFFF; background: {{hero.gradient}}; box-shadow: 0 16px 32px rgba(60, 30, 140, 0.24);">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <span style="font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.78);">Campaña C13</span>
+        <span style="font-size: 13px; font-weight: 600; background: rgba(255,255,255,0.20); padding: 6px 12px; border-radius: 999px;">Corte 8 sep</span>
+      </div>
+      <div style="display: flex; align-items: flex-end; gap: 12px; margin-top: 16px;">
+        <span class="num" style="font-size: 58px; font-weight: 700; line-height: 0.9; letter-spacing: -2.5px;">3</span>
+        <span style="font-size: 18px; font-weight: 600; line-height: 1.2; padding-bottom: 4px;">días para<br>el corte</span>
+      </div>
+      <div style="margin-top: 18px; height: 6px; border-radius: 999px; background: rgba(255,255,255,0.28);">
+        <div style="width: 74%; height: 6px; border-radius: 999px; background: #FFFFFF;"></div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 12px 20px 0;">
+      <div style="background: #FFFFFF; border-radius: 22px; padding: 16px; box-shadow: 0 2px 10px rgba(60,30,140,0.06);">
+        <div style="display: flex; align-items: center; gap: 7px;">
+          <span style="width: 9px; height: 9px; border-radius: 999px; background: #E11D48;"></span>
+          <span style="font-size: 13px; font-weight: 600; color: #857D9B;">Por cobrar</span>
+        </div>
+        <div class="num" style="font-size: 27px; font-weight: 700; letter-spacing: -0.8px; color: #E11D48; margin-top: 8px;">$128.40</div>
+        <div style="font-size: 13px; color: #857D9B; margin-top: 2px;">5 personas</div>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 22px; padding: 16px; box-shadow: 0 2px 10px rgba(60,30,140,0.06);">
+        <div style="display: flex; align-items: center; gap: 7px;">
+          <span style="width: 9px; height: 9px; border-radius: 999px; background: #F08C00;"></span>
+          <span style="font-size: 13px; font-weight: 600; color: #857D9B;">Por entregar</span>
+        </div>
+        <div class="num" style="font-size: 27px; font-weight: 700; letter-spacing: -0.8px; color: #F08C00; margin-top: 8px;">7</div>
+        <div style="font-size: 13px; color: #857D9B; margin-top: 2px;">pedidos</div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px; margin: 26px 20px 12px;">
+      <span style="font-size: 15px; font-weight: 700;">Para hoy</span>
+      <span class="num" style="font-size: 13px; font-weight: 700; color: #5B2FE3; background: #EFE9FF; padding: 3px 9px; border-radius: 999px;">{{pendingCount}}</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; margin: 0 20px;">
+      <sc-for list="{{pending}}" as="p" hint-placeholder-count="3">
+        <div style="background: #FFFFFF; border-radius: 22px; padding: 14px; box-shadow: 0 2px 10px rgba(60,30,140,0.06);">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="width: 46px; height: 46px; flex: 0 0 46px; border-radius: 999px; background: #F1ECFF; color: #5B2FE3; font-size: 19px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{p.initial}}</span>
+            <span style="min-width: 0; flex: 1 1 auto;">
+              <span style="display: block; font-size: 17px; font-weight: 600; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{p.name}}</span>
+              <span style="display: block; font-size: 14px; color: #857D9B; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{p.reason}}</span>
+            </span>
+            <span class="num" style="font-size: 19px; font-weight: 700; letter-spacing: -0.5px; color: {{p.tone}};">{{p.amount}}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-top: 12px;">
+            <button onClick="{{p.open}}" style="flex: 1 1 auto; min-height: 46px; border-radius: 999px; background: #12B36A; color: #FFFFFF; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 11.6a8.2 8.2 0 0 1-11.9 7.3L3.5 20.5l1.6-5.1a8.2 8.2 0 1 1 15.4-3.8Z"></path></svg>
+              Escribir
+            </button>
+            <button onClick="{{p.done}}" aria-label="Ya le escribí" style="width: 46px; height: 46px; flex: 0 0 46px; border-radius: 999px; background: #F1ECFF; color: #5B2FE3; display: flex; align-items: center; justify-content: center;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg>
+            </button>
+          </div>
+        </div>
+      </sc-for>
+
+      <sc-if value="{{allDone}}" hint-placeholder-val="{{false}}">
+        <div style="background: #FFFFFF; border-radius: 22px; padding: 28px 20px; text-align: center; box-shadow: 0 2px 10px rgba(60,30,140,0.06);">
+          <span style="width: 56px; height: 56px; border-radius: 999px; background: #DDF7EA; color: #12B36A; display: inline-flex; align-items: center; justify-content: center;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg>
+          </span>
+          <div style="font-size: 19px; font-weight: 700; letter-spacing: -0.3px; margin-top: 12px;">Nada pendiente</div>
+        </div>
+      </sc-if>
+    </div>
+
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; background: rgba(255,255,255,0.94); backdrop-filter: blur(14px); border-top: 1px solid #ECE7F6; display: flex; align-items: flex-start; padding: 8px 6px 0;">
+    <sc-for list="{{tabsLeft}}" as="t" hint-placeholder-count="2">
+      <button onClick="{{t.pick}}" style="flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding-top: 6px; color: {{t.color}};">
+        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.d}}"></path></svg>
+        <span style="font-size: 11px; font-weight: {{t.weight}};">{{t.label}}</span>
+      </button>
+    </sc-for>
+
+    <div style="flex: 0 0 78px; display: flex; justify-content: center;">
+      <button onClick="{{capture}}" aria-label="Anotar" style="width: 62px; height: 62px; border-radius: 999px; background: {{hero.gradient}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; margin-top: -26px; box-shadow: 0 10px 22px rgba(91, 47, 227, 0.42);">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+      </button>
+    </div>
+
+    <sc-for list="{{tabsRight}}" as="t" hint-placeholder-count="2">
+      <button onClick="{{t.pick}}" style="flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding-top: 6px; color: {{t.color}};">
+        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.d}}"></path></svg>
+        <span style="font-size: 11px; font-weight: {{t.weight}};">{{t.label}}</span>
+      </button>
+    </sc-for>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#5B2FE3","options":["#5B2FE3","#7C3AED","#8B5CF6","#4C1D95"],"section":"Color"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props)
+    this.state = {
+      tab: 'today',
+      pending: [
+        { id: 'p1', initial: 'K', name: 'Karla Pérez', reason: 'falta el saldo · 3 días', amount: '$22.40', tone: '#E11D48' },
+        { id: 'p2', initial: 'D', name: 'Doris Chango', reason: 'sin confirmar · 1 día', amount: '$18.90', tone: '#1B1630' },
+        { id: 'p3', initial: 'M', name: 'Mayra Lligalo', reason: 'ya llegó, falta entregar', amount: '$41.10', tone: '#F08C00' },
+      ],
+    }
+  }
+
+  tab(id, label, d) {
+    const active = this.state.tab === id
+    return {
+      label,
+      d,
+      color: active ? this.accent() : '#9A93AE',
+      weight: active ? 700 : 500,
+      pick: () => this.setState({ tab: id }),
+    }
+  }
+
+  accent() {
+    return this.props.accent ?? '#5B2FE3'
+  }
+
+  renderVals() {
+    const accent = this.accent()
+    const pending = this.state.pending.map((p) => ({
+      ...p,
+      done: () => this.setState({ pending: this.state.pending.filter((x) => x.id !== p.id) }),
+      open: () => this.setState({ tab: 'today' }),
+    }))
+
+    return {
+      accent,
+      hero: {
+        gradient:
+          'linear-gradient(155deg, color-mix(in oklab, ' + accent + ' 68%, #FFFFFF) 0%, ' +
+          accent + ' 55%, color-mix(in oklab, ' + accent + ' 76%, #000000) 100%)',
+      },
+      pending,
+      pendingCount: pending.length,
+      allDone: pending.length === 0,
+      capture: () => this.setState({ tab: 'capture' }),
+      tabsLeft: [
+        this.tab('today', 'Hoy', 'M3 10.6 12 3.4l9 7.2M5.6 9.4V20.6h12.8V9.4'),
+        this.tab('orders', 'Pedidos', 'M6 8h12l-1 12.4H7L6 8ZM9 8V6.2a3 3 0 0 1 6 0V8'),
+      ],
+      tabsRight: [
+        this.tab('customers', 'Clientes', 'M9.4 11.6a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM3.4 20a6 6 0 0 1 12 0M16.4 5.2a3.5 3.5 0 0 1 0 6.2M17.6 15a6 6 0 0 1 3 5'),
+        this.tab('more', 'Más', 'M4 7.5h16M4 12h16M4 16.5h16'),
+      ],
+    }
+  }
+}
+</script>
+</body>
+</html>

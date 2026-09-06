@@ -7,12 +7,7 @@
  * already typed and she hits send.
  */
 import { DEFAULT_TEMPLATES, type MessageTemplate, type TemplateKey } from '../../content/templates'
-import {
-  findTemplate,
-  itemsAsLines,
-  renderTemplate,
-  whatsappUrl,
-} from '../../content/whatsapp'
+import { findTemplate, itemsAsLines, renderTemplate } from '../../content/whatsapp'
 import type { Campaign, Customer, Order, Setting } from '../../db/types'
 import { daysBetween, orderBalance, orderBalanceCents, orderTotal, toCents } from '../../domain'
 import { formatMoney } from '../../ui'
@@ -85,12 +80,4 @@ export function orderMessage({
     corte: campaign ? formatLongDate(campaign.cutoffDate) : '',
     cuenta: bankAccount,
   })
-}
-
-/**
- * Opened in the same gesture as the tap, so the browser does not treat it as a
- * pop-up. Anything the app wants to write down happens after this call.
- */
-export function openWhatsapp(phone: string | undefined, message: string): void {
-  window.open(whatsappUrl(phone, message), '_blank', 'noopener,noreferrer')
 }

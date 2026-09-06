@@ -1,9 +1,10 @@
-export { AppShell, useActionSlot, type AppShellProps } from './AppShell'
+export { AppShell, useActionSlot, useHeaderSlot, type AppShellProps } from './AppShell'
 export { BigButton, type BigButtonProps, type BigButtonVariant } from './BigButton'
 export { Card, type CardProps } from './Card'
 export { CountBadge, type CountBadgeProps } from './CountBadge'
 export { cx } from './cx'
 export { EmptyState, type EmptyStateProps } from './EmptyState'
+export { HeaderAction } from './HeaderAction'
 export { Gallery } from './Gallery'
 export { formatMoney, Money, type MoneyProps, type MoneySize } from './Money'
 export {
@@ -19,6 +20,7 @@ export { SectionHeader, type SectionHeaderProps } from './SectionHeader'
 export { Sheet, type SheetProps } from './Sheet'
 export {
   STATUS_BORDER,
+  STATUS_INK,
   STATUS_LABEL,
   STATUS_SOFT,
   STATUS_SOLID,
@@ -29,4 +31,4 @@ export {
 export { StatusDot, type StatusDotProps } from './StatusDot'
 export { StatusPill, type StatusPillProps } from './StatusPill'
 export { Stepper, type StepperProps } from './Stepper'
-export { TAB_BAR_HEIGHT, TabBar, type TabBarProps } from './TabBar'
+export { CAPTURE_OVERHANG, TAB_BAR_HEIGHT, TabBar, type TabBarProps } from './TabBar'

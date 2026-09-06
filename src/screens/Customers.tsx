@@ -54,8 +54,11 @@ export function Customers() {
 
   return (
     <>
-      <div className="pt-4">
+      <div className="flex flex-col gap-2 pt-4">
         <SearchField value={query} onChange={setQuery} placeholder="Nombre, @usuario o celular" />
+        <BigButton floating={false} variant="quiet" icon={UserPlus} onClick={() => setNewOpen(true)}>
+          Nuevo cliente
+        </BigButton>
       </div>
 
       {data && data.matches.length === 0 && (
@@ -81,9 +84,6 @@ export function Customers() {
         })}
       </div>
 
-      <BigButton icon={UserPlus} onClick={() => setNewOpen(true)}>
-        Nuevo cliente
-      </BigButton>
 
       <NewCustomerSheet
         open={newOpen}

@@ -67,7 +67,7 @@ export function Row({
         {showCountBig && (
           <span className="money text-[1.75rem] leading-none font-bold tabular-nums">{count}</span>
         )}
-        {trailing ?? (onClick && <ChevronRight size={22} className="text-muted" aria-hidden="true" />)}
+        {trailing ?? (onClick && <ChevronRight size={22} className="text-muted/45" aria-hidden="true" />)}
       </span>
     </>
   )
@@ -97,26 +97,41 @@ export function Row({
 export function RowAction({
   children,
   onClick,
+  href,
   icon: Icon,
   className,
 }: {
   children: ReactNode
   onClick?: () => void
+  /** Same reason as BigButton: leaving the app needs a real anchor. */
+  href?: string
   icon?: LucideIcon
   className?: string
 }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cx(
-        'flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl px-3',
-        'text-[1.0625rem] font-semibold text-brand active:bg-brand-soft',
-        className,
-      )}
-    >
+  const classes = cx(
+    'flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full px-3',
+    'text-[1.0625rem] font-semibold text-brand active:bg-brand-soft',
+    className,
+  )
+
+  const content = (
+    <>
       {Icon && <Icon size={20} aria-hidden="true" />}
       {children}
+    </>
+  )
+
+  if (href !== undefined) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" onClick={onClick} className={classes}>
+        {content}
+      </a>
+    )
+  }
+
+  return (
+    <button type="button" onClick={onClick} className={classes}>
+      {content}
     </button>
   )
 }

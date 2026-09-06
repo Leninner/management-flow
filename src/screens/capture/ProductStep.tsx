@@ -1,8 +1,9 @@
-import { Plus } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { PastItem } from '../../domain'
 import { productSuggestions } from '../../domain'
-import { BigButton, formatMoney, Row, SearchField, Sheet } from '../../ui'
+import { BigButton, Card, formatMoney, Row, SearchField } from '../../ui'
+import { AmountField, parseAmount } from '../orders/fields'
 import { TextField } from '../today/TextField'
 
 const MAX_SUGGESTIONS = 5
@@ -15,8 +16,13 @@ export interface ChosenProduct {
 /**
  * What she is selling. There is no product table: the catalogue is whatever
  * she has sold before, and typing "38588" brings back the last price it went
- * out at. Anything the history does not know is created right here, because
- * leaving this screen mid-live means losing the sale.
+ * out at.
+ *
+ * Anything the history does not know is created right here, in the same
+ * scroll, never in a sheet on top of a sheet. And the price can be skipped:
+ * a live is not the moment to look up what something costs, so the item goes
+ * in at zero and shows up in red on the pedido until she fixes it. Making her
+ * find the price mid-live is how a sale gets lost.
  */
 export function ProductStep({
   history,
@@ -26,7 +32,7 @@ export function ProductStep({
   onChoose: (product: ChosenProduct) => void
 }) {
   const [query, setQuery] = useState('')
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [newOpen, setNewOpen] = useState(false)
   const [newName, setNewName] = useState('')
   const [newPrice, setNewPrice] = useState('')
 
@@ -35,90 +41,111 @@ export function ProductStep({
     [history, query],
   )
   const typed = query.trim()
+  const typedPrice = parseAmount(newPrice) ?? 0
+  const known = suggestions.some((entry) => entry.name.toLowerCase() === typed.toLowerCase())
 
-  function openSheet() {
+  function openNew() {
     setNewName(typed)
     setNewPrice('')
-    setSheetOpen(true)
+    setNewOpen(true)
   }
 
   /** Enter takes the best guess; with nothing to guess it opens the new one. */
   function submit() {
     const best = suggestions[0]
     if (best) onChoose({ name: best.name, price: best.price })
-    else if (typed !== '') openSheet()
+    else if (typed !== '') openNew()
   }
 
-  function saveNew() {
+  function saveNew(price: number) {
     const name = newName.trim()
     if (name === '') return
-    setSheetOpen(false)
-    onChoose({ name, price: parsePrice(newPrice) })
+    setNewOpen(false)
+    onChoose({ name, price })
   }
 
   return (
     <>
-      <SearchField
-        value={query}
-        onChange={setQuery}
-        placeholder="Producto o código"
-        autoFocus
-        onSubmit={submit}
-      />
+      <h2 className="px-1 pt-5 pb-3 text-[1.375rem] font-bold">¿Qué se lleva?</h2>
 
-      <div className="mt-2 flex flex-col gap-2">
-        {suggestions.map((suggestion) => (
-          <Row
-            key={suggestion.name}
-            title={suggestion.name}
-            subtitle={`${formatMoney(suggestion.price)} la última vez`}
-            onClick={() => onChoose({ name: suggestion.name, price: suggestion.price })}
-          />
-        ))}
-      </div>
+      {newOpen ? (
+        /*
+         * The search box goes away while this is open. Leaving it there meant
+         * the same product name was typed on the screen twice, and it was not
+         * obvious which of the two the app was going to keep.
+         */
+        <Card className="flex flex-col gap-4">
+          <div className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <TextField
+                label="Producto nuevo"
+                value={newName}
+                onChange={setNewName}
+                placeholder="38588 Novage"
+                autoFocus
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setNewOpen(false)}
+              aria-label="Cancelar"
+              className="mt-7 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-tint text-muted active:bg-brand-soft"
+            >
+              <X size={20} aria-hidden="true" />
+            </button>
+          </div>
 
-      {typed !== '' && (
-        <div className="mt-3">
-          <BigButton floating={false} variant="quiet" icon={Plus} onClick={openSheet}>
-            <span className="min-w-0 truncate">Crear {typed}</span>
-          </BigButton>
-        </div>
-      )}
-
-      <Sheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        title="Producto nuevo"
-        footer={
-          <BigButton floating={false} onClick={saveNew} disabled={newName.trim() === ''}>
-            Listo
-          </BigButton>
-        }
-      >
-        <div className="flex flex-col gap-5 pb-2">
-          <TextField
-            label="Producto"
-            value={newName}
-            onChange={setNewName}
-            placeholder="38588 Novage"
-            autoFocus
-          />
-          <TextField
+          <AmountField
             label="Precio"
             value={newPrice}
             onChange={setNewPrice}
-            inputMode="decimal"
-            placeholder="12.90"
-            onSubmit={saveNew}
+            onSubmit={() => saveNew(typedPrice)}
           />
-        </div>
-      </Sheet>
+
+          {/*
+            One button, not two. With the price empty, "Listo" and "todavía no
+            sé el precio" did exactly the same thing, so the second one only
+            asked her to choose between two identical outcomes.
+          */}
+          <BigButton
+            floating={false}
+            onClick={() => saveNew(typedPrice)}
+            disabled={newName.trim() === ''}
+          >
+            {typedPrice > 0 ? 'Listo' : 'Anotar sin precio'}
+          </BigButton>
+        </Card>
+      ) : (
+        <>
+          <SearchField
+            value={query}
+            onChange={setQuery}
+            placeholder="Producto o código"
+            autoFocus
+            onSubmit={submit}
+          />
+
+          <div className="flex flex-col gap-2 pt-3">
+            {typed !== '' && !known && (
+              <BigButton floating={false} variant="quiet" icon={Plus} onClick={openNew}>
+                <span className="min-w-0 truncate">Nuevo: {typed}</span>
+              </BigButton>
+            )}
+            {suggestions.map((suggestion) => (
+              <Row
+                key={suggestion.name}
+                title={suggestion.name}
+                subtitle={
+                  suggestion.price > 0
+                    ? `${formatMoney(suggestion.price)} la última vez`
+                    : 'sin precio todavía'
+                }
+                onClick={() => onChoose({ name: suggestion.name, price: suggestion.price })}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </>
   )
-}
-
-/** She types "12,90" as often as "12.90", and an empty price is a zero. */
-function parsePrice(raw: string): number {
-  const value = Number(raw.replace(',', '.').trim())
-  return Number.isFinite(value) && value > 0 ? value : 0
 }

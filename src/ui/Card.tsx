@@ -12,7 +12,7 @@ export function Card({ children, padded = true, className }: CardProps) {
   return (
     <div
       className={cx(
-        'overflow-hidden rounded-card border border-line bg-card shadow-[0_1px_2px_rgba(28,25,23,0.05)]',
+        'overflow-hidden rounded-card bg-card shadow-card',
         padded && 'p-4',
         className,
       )}

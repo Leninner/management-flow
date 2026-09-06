@@ -36,7 +36,7 @@ export function TextField({
 
   return (
     <label className={cx('block', className)}>
-      <span className="mb-2 block text-[0.9375rem] font-semibold text-muted">{label}</span>
+      <span className="mb-2 block px-1 text-[0.9375rem] font-semibold text-muted">{label}</span>
       <input
         type={type}
         value={value}
@@ -51,7 +51,7 @@ export function TextField({
         autoCorrect="off"
         autoCapitalize="sentences"
         spellCheck={false}
-        className="min-h-14 w-full rounded-2xl border border-line bg-card px-4 text-[1.1875rem] text-ink outline-none placeholder:text-muted focus:border-brand"
+        className="min-h-14 w-full rounded-field border-2 border-line bg-card px-4 text-[1.1875rem] text-ink outline-none placeholder:text-muted focus:border-brand"
       />
     </label>
   )
