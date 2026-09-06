@@ -6,6 +6,9 @@ import { db, newId } from '../db/db'
 import type { Campaign } from '../db/types'
 import { nowIso } from '../domain/dates'
 
+/** Only the two fields an edit screen shows. Activation has its own verbs. */
+export type CampaignPatch = Partial<Pick<Campaign, 'name' | 'cutoffDate'>>
+
 export interface NewCampaign {
   name: string
   /** ISO date of the last day to place the order with Oriflame. */
@@ -31,16 +34,27 @@ export async function list(): Promise<Campaign[]> {
 }
 
 export async function create(input: NewCampaign): Promise<Campaign> {
-  const name = input.name.trim()
-  if (!name) throw new Error('A campaign needs a name')
-  if (!input.cutoffDate) throw new Error('A campaign needs a cutoff date')
+  const name = cleanName(input.name)
+  const cutoffDate = cleanCutoff(input.cutoffDate)
 
-  const campaign: Campaign = { id: newId(), name, cutoffDate: input.cutoffDate, active: input.active ?? true }
+  const campaign: Campaign = { id: newId(), name, cutoffDate, active: input.active ?? true }
   await db.transaction('rw', db.campaigns, async () => {
     if (campaign.active) await deactivateAll()
     await db.campaigns.add(campaign)
   })
   return campaign
+}
+
+/**
+ * Fixes a typo in the name or a wrong cutoff date. Opening a new campaign to
+ * correct a letter would be absurd, and it would strand the orders.
+ */
+export async function update(id: string, changes: CampaignPatch): Promise<Campaign> {
+  const patched: CampaignPatch = {
+    ...(changes.name === undefined ? {} : { name: cleanName(changes.name) }),
+    ...(changes.cutoffDate === undefined ? {} : { cutoffDate: cleanCutoff(changes.cutoffDate) }),
+  }
+  return patch(id, patched)
 }
 
 export async function setActive(id: string): Promise<Campaign> {
@@ -60,6 +74,21 @@ export async function markArrived(id: string, arrivedAt: string = nowIso()): Pro
 
 export async function close(id: string): Promise<Campaign> {
   return patch(id, { active: false })
+}
+
+function cleanName(name: string): string {
+  const trimmed = name.trim()
+  if (!trimmed) throw new Error('A campaign needs a name')
+  return trimmed
+}
+
+/**
+ * Dates are ISO strings everywhere. A localised date would silently turn every
+ * day count in the follow-up rules into NaN, which reads as "no follow-ups".
+ */
+function cleanCutoff(cutoffDate: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}/.test(cutoffDate)) throw new Error(`A cutoff date must be ISO: ${cutoffDate}`)
+  return cutoffDate
 }
 
 async function deactivateAll(): Promise<void> {

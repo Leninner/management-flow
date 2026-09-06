@@ -70,3 +70,34 @@ describe('close', () => {
     await expect(db.campaigns.get(campaign.id)).resolves.toMatchObject({ active: false })
   })
 })
+
+describe('update', () => {
+  it('fixes a typo in the name', async () => {
+    const campaign = await campaigns.create({ name: 'C13-2062', cutoffDate: '2026-09-20' })
+    const updated = await campaigns.update(campaign.id, { name: '  C13-2026  ' })
+    expect(updated).toMatchObject({ name: 'C13-2026', cutoffDate: '2026-09-20', active: true })
+  })
+
+  it('moves the cutoff date', async () => {
+    const campaign = await campaigns.create({ name: 'C13-2026', cutoffDate: '2026-09-20' })
+    await campaigns.update(campaign.id, { cutoffDate: '2026-09-18' })
+    await expect(db.campaigns.get(campaign.id)).resolves.toMatchObject({ cutoffDate: '2026-09-18' })
+  })
+
+  it('leaves the active flag and the arrival date alone', async () => {
+    const campaign = await campaigns.create({ name: 'C13-2026', cutoffDate: '2026-09-20' })
+    await campaigns.markArrived(campaign.id, '2026-09-22T00:00:00.000Z')
+    const updated = await campaigns.update(campaign.id, { name: 'C13' })
+    expect(updated).toMatchObject({ active: true, arrivedAt: '2026-09-22T00:00:00.000Z' })
+  })
+
+  it('refuses an empty name and a date that is not ISO', async () => {
+    const campaign = await campaigns.create({ name: 'C13-2026', cutoffDate: '2026-09-20' })
+    await expect(campaigns.update(campaign.id, { name: '   ' })).rejects.toThrow()
+    await expect(campaigns.update(campaign.id, { cutoffDate: '20/09/2026' })).rejects.toThrow()
+  })
+
+  it('throws for a campaign that does not exist', async () => {
+    await expect(campaigns.update('nope', { name: 'C13' })).rejects.toThrow()
+  })
+})

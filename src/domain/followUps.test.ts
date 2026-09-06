@@ -336,3 +336,35 @@ describe('reengage silencing', () => {
     expect(result.find((followUp) => followUp.templateKey === 'reengage')).toMatchObject({ customerId: 'frequent' })
   })
 })
+
+describe('a cutoff date that moves', () => {
+  const campaigns = [
+    makeCampaign({ id: 'camp-11', cutoffDate: '2026-07-20', active: false }),
+    makeCampaign({ id: 'camp-12', cutoffDate: '2026-08-20', active: false }),
+  ]
+  const paid = { confirmed: true, items: [makeItem({ price: 10 })], paidAmount: 10, createdAt: '2026-07-01' }
+  const orders = [
+    makeOrder({ ...paid, id: 'a', customerId: 'frequent', campaignId: 'camp-11' }),
+    makeOrder({ ...paid, id: 'b', customerId: 'frequent', campaignId: 'camp-12' }),
+  ]
+  const customer = makeCustomer({ id: 'frequent', name: 'Rosa' })
+
+  it('goes quiet instead of throwing when the cutoff lands before the previous campaign closed', () => {
+    const active = makeCampaign({ id: 'camp-13', cutoffDate: '2026-09-06', active: true })
+    const dragged = { ...active, cutoffDate: '2026-08-10' }
+    const result = followUps({ orders, customers: [customer], campaigns: [...campaigns, dragged], today: TODAY })
+    expect(result.filter((followUp) => followUp.templateKey === 'reengage')).toEqual([])
+  })
+
+  it('goes quiet when the cutoff is dragged into the past', () => {
+    const dragged = makeCampaign({ id: 'camp-13', cutoffDate: '2026-09-01', active: true })
+    const result = followUps({ orders, customers: [customer], campaigns: [...campaigns, dragged], today: TODAY })
+    expect(result.filter((followUp) => followUp.templateKey === 'reengage')).toEqual([])
+  })
+
+  it('still fires when the cutoff is only pulled a little closer', () => {
+    const dragged = makeCampaign({ id: 'camp-13', cutoffDate: '2026-09-05', active: true })
+    const result = followUps({ orders, customers: [customer], campaigns: [...campaigns, dragged], today: TODAY })
+    expect(result.filter((followUp) => followUp.templateKey === 'reengage')).toHaveLength(1)
+  })
+})

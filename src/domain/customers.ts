@@ -5,10 +5,10 @@
  * from the 098 number, so the same person arrives under several identities and
  * duplicates are a matter of when, not if.
  */
-import type { Customer, Order, OrderItem } from '../db/types'
-import { earlierIso, laterIso } from './dates'
-import { fromCents, orderBalanceCents, toCents } from './money'
-import { digitsOf, normalizeName, normalizeText } from './text'
+import type { Customer, Order } from '../db/types'
+import { fromCents, orderBalanceCents } from './money'
+import { combineOrders } from './orders'
+import { digitsOf, normalizeText } from './text'
 
 /** A merge is only applied by the data layer, so the domain returns the plan. */
 export interface CustomerMergeResult {
@@ -53,36 +53,6 @@ function mergeAliases(target: Customer, source: Customer): string[] {
     aliases.push(alias)
   }
   return aliases
-}
-
-function mergeItems(targetItems: OrderItem[], sourceItems: OrderItem[]): OrderItem[] {
-  const merged = targetItems.map((item) => ({ ...item }))
-  for (const item of sourceItems) {
-    const key = normalizeName(item.name)
-    // The target price wins: it is what the customer was already told to pay.
-    const existing = merged.find((candidate) => normalizeName(candidate.name) === key)
-    if (existing) existing.quantity += item.quantity
-    else merged.push({ ...item })
-  }
-  return merged
-}
-
-function combineOrders(target: Order, source: Order): Order {
-  const notes = [target.notes, source.notes].filter((note) => note && note.trim() !== '')
-  return {
-    ...target,
-    items: mergeItems(target.items, source.items),
-    paidAmount: fromCents(toCents(target.paidAmount) + toCents(source.paidAmount)),
-    shippingCost: fromCents(toCents(target.shippingCost) + toCents(source.shippingCost)),
-    confirmed: target.confirmed || source.confirmed,
-    // Half a combined order delivered is not a delivered order: better to hand
-    // it over twice than to drop it off the "por entregar" list.
-    deliveredAt:
-      target.deliveredAt && source.deliveredAt ? laterIso(target.deliveredAt, source.deliveredAt) : undefined,
-    contacts: [...target.contacts, ...source.contacts].sort(),
-    createdAt: earlierIso(target.createdAt, source.createdAt),
-    ...(notes.length > 0 ? { notes: notes.join('\n') } : {}),
-  }
 }
 
 /**

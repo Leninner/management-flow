@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db/db'
 import * as orders from './orders'
 import { resetDatabase } from './test-db'
@@ -210,5 +210,116 @@ describe('reads', () => {
     await expect(orders.listByCampaign(CAMPAIGN)).resolves.toHaveLength(2)
     await expect(orders.listByCustomer(CUSTOMER)).resolves.toHaveLength(2)
     await expect(orders.listAll()).resolves.toHaveLength(3)
+  })
+})
+
+describe('moveUnconfirmed', () => {
+  const NEXT = 'camp-14'
+
+  beforeEach(async () => {
+    await db.campaigns.add({ id: CAMPAIGN, name: 'C13-2026', cutoffDate: '2026-09-20', active: false })
+    await db.campaigns.add({ id: NEXT, name: 'C14-2026', cutoffDate: '2026-10-10', active: true })
+  })
+
+  it('carries the unconfirmed orders forward and leaves the confirmed ones behind', async () => {
+    const carried = await orders.addItem({ campaignId: CAMPAIGN, customerId: CUSTOMER, item: { name: 'Labial' } })
+    const stays = await orders.addItem({ campaignId: CAMPAIGN, customerId: 'cus-2', item: { name: 'Crema' } })
+    await orders.markConfirmed(stays.id)
+
+    await expect(orders.moveUnconfirmed(CAMPAIGN, NEXT)).resolves.toBe(1)
+
+    await expect(db.orders.get(carried.id)).resolves.toMatchObject({ campaignId: NEXT })
+    await expect(db.orders.get(stays.id)).resolves.toMatchObject({ campaignId: CAMPAIGN })
+    await expect(db.orders.count()).resolves.toBe(2)
+  })
+
+  it('keeps the order intact: items, money, notes, contacts and the creation date', async () => {
+    const created = await orders.addItem({
+      campaignId: CAMPAIGN,
+      customerId: CUSTOMER,
+      item: { name: '38588 Novage', quantity: 2, price: 12.9 },
+    })
+    await orders.recordPayment(created.id, 5.5)
+    await orders.setShippingCost(created.id, 3.25)
+    await orders.setNotes(created.id, 'manda por Servientrega')
+    await orders.recordContact(created.id, '2026-09-06T00:00:00.000Z')
+
+    await orders.moveUnconfirmed(CAMPAIGN, NEXT)
+
+    await expect(db.orders.get(created.id)).resolves.toEqual({
+      id: created.id,
+      campaignId: NEXT,
+      customerId: CUSTOMER,
+      items: [{ name: '38588 Novage', quantity: 2, price: 12.9 }],
+      paidAmount: 5.5,
+      shippingCost: 3.25,
+      confirmed: false,
+      contacts: ['2026-09-06T00:00:00.000Z'],
+      createdAt: created.createdAt,
+      notes: 'manda por Servientrega',
+    })
+  })
+
+  it('merges into the order the customer already has in the target campaign', async () => {
+    const carried = await orders.addItem({
+      campaignId: CAMPAIGN,
+      customerId: CUSTOMER,
+      item: { name: 'Labial', quantity: 1, price: 7 },
+    })
+    await orders.recordPayment(carried.id, 5)
+
+    const waiting = await orders.addItem({
+      campaignId: NEXT,
+      customerId: CUSTOMER,
+      item: { name: 'labial', quantity: 2, price: 8 },
+    })
+    await orders.addItem({ campaignId: NEXT, customerId: CUSTOMER, item: { name: 'Crema', quantity: 1, price: 9 } })
+    await orders.recordPayment(waiting.id, 3)
+    await orders.setShippingCost(waiting.id, 2)
+
+    await expect(orders.moveUnconfirmed(CAMPAIGN, NEXT)).resolves.toBe(1)
+
+    await expect(db.orders.count()).resolves.toBe(1)
+    await expect(db.orders.get(carried.id)).resolves.toBeUndefined()
+    await expect(db.orders.get(waiting.id)).resolves.toMatchObject({
+      campaignId: NEXT,
+      items: [
+        { name: 'labial', quantity: 3, price: 8 },
+        { name: 'Crema', quantity: 1, price: 9 },
+      ],
+      paidAmount: 8,
+      shippingCost: 2,
+    })
+  })
+
+  it('returns zero when there is nothing to carry', async () => {
+    await expect(orders.moveUnconfirmed(CAMPAIGN, NEXT)).resolves.toBe(0)
+  })
+
+  it('refuses to move a campaign into itself', async () => {
+    await expect(orders.moveUnconfirmed(CAMPAIGN, CAMPAIGN)).rejects.toThrow()
+  })
+
+  it('refuses an unknown target campaign and changes nothing', async () => {
+    const created = await orders.addItem({ campaignId: CAMPAIGN, customerId: CUSTOMER, item: { name: 'Labial' } })
+    await expect(orders.moveUnconfirmed(CAMPAIGN, 'nope')).rejects.toThrow()
+    await expect(db.orders.get(created.id)).resolves.toMatchObject({ campaignId: CAMPAIGN })
+  })
+
+  it('leaves everything untouched when a write fails halfway', async () => {
+    const carried = await orders.addItem({
+      campaignId: CAMPAIGN,
+      customerId: CUSTOMER,
+      item: { name: 'Labial', price: 7 },
+    })
+    const waiting = await orders.addItem({ campaignId: NEXT, customerId: CUSTOMER, item: { name: 'Crema', price: 9 } })
+
+    const failing = vi.spyOn(db.orders, 'bulkDelete').mockRejectedValueOnce(new Error('disk went away'))
+    await expect(orders.moveUnconfirmed(CAMPAIGN, NEXT)).rejects.toThrow('disk went away')
+    failing.mockRestore()
+
+    await expect(db.orders.count()).resolves.toBe(2)
+    await expect(db.orders.get(carried.id)).resolves.toMatchObject({ campaignId: CAMPAIGN, items: [{ name: 'Labial', quantity: 1, price: 7 }] })
+    await expect(db.orders.get(waiting.id)).resolves.toMatchObject({ items: [{ name: 'Crema', quantity: 1, price: 9 }] })
   })
 })

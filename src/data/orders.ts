@@ -10,6 +10,7 @@ import { db, newId } from '../db/db'
 import type { Order, OrderItem } from '../db/types'
 import { nowIso } from '../domain/dates'
 import { fromCents, toCents } from '../domain/money'
+import { combineOrders } from '../domain/orders'
 import { normalizeName } from '../domain/text'
 
 /** What the live capture screen produces: a name, and maybe a quantity or price. */
@@ -77,6 +78,56 @@ export async function addItem({ campaignId, customerId, item }: AddItemInput): P
     const updated = { ...existing, items }
     await db.orders.put(updated)
     return updated
+  })
+}
+
+/**
+ * Carries the orders nobody confirmed into the next campaign. What did not make
+ * the cutoff waits for the next catalogue, and it has to arrive whole: items,
+ * money, notes, contacts and the date it was captured.
+ *
+ * One transaction for the whole batch. Replaying this order by order is N
+ * transactions on money data, and an interruption halfway leaves an order
+ * living in two campaigns or a payment silently dropped.
+ *
+ * Returns how many orders moved. A customer who already has an order in the
+ * target campaign gets the carried items merged into it, never a second order.
+ */
+export async function moveUnconfirmed(fromCampaignId: string, toCampaignId: string): Promise<number> {
+  if (fromCampaignId === toCampaignId) throw new Error('An order cannot move into its own campaign')
+
+  return db.transaction('rw', db.orders, db.campaigns, async () => {
+    const target = await db.campaigns.get(toCampaignId)
+    if (!target) throw new Error(`Unknown campaign: ${toCampaignId}`)
+
+    const carried = await db.orders.where('campaignId').equals(fromCampaignId).toArray()
+    const unconfirmed = carried.filter((order) => !order.confirmed)
+    if (unconfirmed.length === 0) return 0
+
+    const waiting = await db.orders.where('campaignId').equals(toCampaignId).toArray()
+    const byCustomer = new Map(waiting.map((order) => [order.customerId, order]))
+
+    const writes: Order[] = []
+    const absorbed: string[] = []
+
+    for (const order of unconfirmed) {
+      const existing = byCustomer.get(order.customerId)
+      if (!existing) {
+        // Same id, new campaign: nothing to copy, so nothing to lose.
+        const moved = { ...order, campaignId: toCampaignId }
+        byCustomer.set(order.customerId, moved)
+        writes.push(moved)
+        continue
+      }
+      const combined = combineOrders(existing, order)
+      byCustomer.set(order.customerId, combined)
+      writes.push(combined)
+      absorbed.push(order.id)
+    }
+
+    await db.orders.bulkPut(writes)
+    if (absorbed.length > 0) await db.orders.bulkDelete(absorbed)
+    return unconfirmed.length
   })
 }
 
