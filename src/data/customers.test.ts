@@ -169,3 +169,26 @@ describe('the customer contact log', () => {
     expect(merged.contacts).toEqual(['2026-08-01T00:00:00.000Z', '2026-09-04T00:00:00.000Z'])
   })
 })
+
+describe('remove', () => {
+  it('takes the orders of the customer with them', async () => {
+    const customer = await customers.create({ name: 'Ana' })
+    const other = await customers.create({ name: 'Rosa' })
+    await db.orders.bulkAdd([
+      makeOrder({ id: 'o-1', customerId: customer.id, campaignId: 'camp-12' }),
+      makeOrder({ id: 'o-2', customerId: customer.id, campaignId: 'camp-13' }),
+      makeOrder({ id: 'o-3', customerId: other.id, campaignId: 'camp-13' }),
+    ])
+
+    await customers.remove(customer.id)
+
+    await expect(db.customers.get(customer.id)).resolves.toBeUndefined()
+    await expect(db.orders.toArray()).resolves.toMatchObject([{ id: 'o-3' }])
+  })
+
+  it('does nothing loud for a customer with no orders or one that is already gone', async () => {
+    const customer = await customers.create({ name: 'Ana' })
+    await expect(customers.remove(customer.id)).resolves.toBeUndefined()
+    await expect(customers.remove('nope')).resolves.toBeUndefined()
+  })
+})

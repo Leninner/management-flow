@@ -1,16 +1,23 @@
 /**
- * The rarely used, dangerous action of a pedido.
+ * The rarely used, dangerous actions of a detail screen.
  *
- * Borrar used to sit under the products, which meant scrolling past the whole
- * order to reach it and, worse, scrolling past it every time she was looking
+ * Borrar used to sit under the content, which meant scrolling past the whole
+ * screen to reach it and, worse, scrolling past it every time she was looking
  * for something else. Up here it is one tap from anywhere on the screen and
  * still impossible to hit by accident.
  */
-import { MoreHorizontal, Trash2 } from 'lucide-react'
+import { MoreHorizontal } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 
-export function OrderMenu({ onDelete }: { onDelete: () => void }) {
+export interface MoreMenuItem {
+  label: string
+  icon: LucideIcon
+  onSelect: () => void
+}
+
+export function MoreMenu({ items }: { items: MoreMenuItem[] }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -38,17 +45,20 @@ export function OrderMenu({ onDelete }: { onDelete: () => void }) {
               className="absolute right-3 w-60 rounded-card bg-card p-1.5 shadow-pop"
               style={{ top: 'calc(env(safe-area-inset-top) + 60px)' }}
             >
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false)
-                  onDelete()
-                }}
-                className="flex min-h-13 w-full items-center gap-3 rounded-2xl px-3 text-left text-[1.0625rem] font-bold text-owes active:bg-owes-soft"
-              >
-                <Trash2 size={21} aria-hidden="true" />
-                Borrar el pedido
-              </button>
+              {items.map(({ label, icon: Icon, onSelect }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    onSelect()
+                  }}
+                  className="flex min-h-13 w-full items-center gap-3 rounded-2xl px-3 text-left text-[1.0625rem] font-bold text-owes active:bg-owes-soft"
+                >
+                  <Icon size={21} aria-hidden="true" />
+                  {label}
+                </button>
+              ))}
             </div>
           </div>,
           document.body,

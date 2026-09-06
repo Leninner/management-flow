@@ -6,7 +6,7 @@
  * items, the shipping and what was paid.
  */
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Check, DollarSign, MessageCircle, PackageX, Plus, Truck } from 'lucide-react'
+import { Check, DollarSign, MessageCircle, PackageX, Plus, Trash2, Truck } from 'lucide-react'
 import { useState } from 'react'
 import {
   campaigns as campaignRepo,
@@ -19,16 +19,17 @@ import { orderBalance, orderSubtotal, orderTotal, toCents } from '../domain'
 import {
   BigButton,
   Card,
+  ConfirmSheet,
   EmptyState,
   formatMoney,
   HeaderAction,
   Money,
+  MoreMenu,
   Row,
   SectionHeader,
   useNavigation,
 } from '../ui'
 import { AddItemSheet } from './orders/AddItemSheet'
-import { ConfirmSheet } from './orders/ConfirmSheet'
 import { orderStatus } from './orders/filters'
 import { todayIso } from './orders/format'
 import { ItemCard } from './orders/ItemCard'
@@ -36,7 +37,6 @@ import { itemHistory } from './orders/items'
 import { PaymentSheet } from './orders/PaymentSheet'
 import { PriceSheet } from './orders/PriceSheet'
 import { ShippingSheet } from './orders/ShippingSheet'
-import { OrderMenu } from './orders/OrderMenu'
 import { OrderSteps, type OrderStep } from './orders/OrderSteps'
 import { bankAccountFrom, orderMessage, templatesFrom } from './orders/whatsapp'
 
@@ -125,7 +125,11 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
   return (
     <>
       <HeaderAction>
-        <OrderMenu onDelete={() => setSheet('delete')} />
+        <MoreMenu
+          items={[
+            { label: 'Borrar el pedido', icon: Trash2, onSelect: () => setSheet('delete') },
+          ]}
+        />
       </HeaderAction>
 
       <div className="flex flex-col gap-2 pt-4">
