@@ -24,6 +24,12 @@ export interface Customer {
   aliases: string[]
   whatsapp?: string
   address?: string
+  /**
+   * One ISO date per follow-up sent to the person rather than to an order.
+   * Without this the reengage trigger has nowhere to record "ya le escribí"
+   * and repeats the same names every day until she stops opening the app.
+   */
+  contacts: string[]
 }
 
 export interface OrderItem {

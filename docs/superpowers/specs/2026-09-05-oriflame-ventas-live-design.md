@@ -47,7 +47,8 @@ Campaign {
 Customer {
   id, nombre,
   alias: string[],     // ["@maria23", "0987654321", "Mafer"]
-  whatsapp?, direccion?
+  whatsapp?, direccion?,
+  contactos: Date[]    // seguimientos a la persona, no a un pedido
 }
 
 Order {
@@ -124,7 +125,7 @@ PEDIDO CAMPAÑA C13 — 12 clientes
  5x  38588  Novage Ecollagen
  3x  42102  Labial The One
  2x  31234  Crema Milk & Honey
- Total: 11 unidades          [ Copiar ]
+ Total: 10 unidades          [ Copiar ]
 ```
 
 Sin esto ella abre 12 pedidos y suma a mano. Si pide 4 en vez de 5, alguien se queda sin producto.
@@ -226,7 +227,11 @@ Definiciones que los disparadores necesitan y no son obvias:
 - **Deuda arrastrada**: suma de saldos de sus pedidos en campañas que ya no están activas.
 - **Mercadería llegó**: la campaña tiene `fechaLlegada`.
 
-**Tope de dos seguimientos por pedido.** Se cuenta con `contactos.length`. Después sale solo de la lista. Insistir quema clientes, y es mejor perder una venta que perder una clienta.
+**Tope de dos seguimientos por pedido.** Se cuenta con `contactos.length`.
+
+**Un solo seguimiento por pedido a la vez.** La fila de "Hoy" tiene un botón de WhatsApp y un botón no puede llevar tres plantillas. Cuando varias reglas disparan, el orden es: corte > llegó > saldo > pago > confirmación > reenganche > recompra. El deadline gana sobre la plata, la plata gana sobre el mantenimiento.
+
+**El reenganche apunta a un cliente, no a un pedido**, así que su "ya le escribí" se registra en `Customer.contactos`. Sin eso el mismo nombre reaparece los tres días previos al corte. Después sale solo de la lista. Insistir quema clientes, y es mejor perder una venta que perder una clienta.
 
 ## Errores y casos borde
 
