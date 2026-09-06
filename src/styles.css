@@ -1,0 +1,49 @@
+@import 'tailwindcss';
+
+/*
+ * Visual identity. The rule is that a screen must be understandable at a
+ * glance, without reading: big numbers, small labels, colour carries state.
+ */
+@theme {
+  /* Cream instead of pure white: less glare when using the phone outdoors. */
+  --color-paper: #fdfbf7;
+  --color-card: #ffffff;
+  --color-ink: #1c1917;
+  --color-muted: #78716c;
+  --color-line: #e7e2d9;
+
+  /* Plum. Deliberately off the state colours so it never reads as a status. */
+  --color-brand: #7c2d5a;
+  --color-brand-soft: #f7ecf2;
+
+  /* The three states. Learned once, instead of nine words read every time. */
+  --color-owes: #dc2626;
+  --color-pending: #d97706;
+  --color-done: #16a34a;
+  --color-owes-soft: #fee2e2;
+  --color-pending-soft: #fef3c7;
+  --color-done-soft: #dcfce7;
+
+  --text-base: 1.0625rem; /* 17px floor for readability */
+
+  --radius-card: 1rem;
+}
+
+html {
+  background: var(--color-paper);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: var(--text-base);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overscroll-behavior-y: none;
+}
+
+/* Tabular figures everywhere money is shown, so columns of amounts line up. */
+.money {
+  font-variant-numeric: tabular-nums;
+}
