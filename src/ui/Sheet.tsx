@@ -96,7 +96,7 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
         aria-modal="true"
         aria-label={title}
         className={cx(
-          'relative mx-auto flex max-h-[88dvh] w-full max-w-lg flex-col rounded-t-[1.75rem] bg-paper shadow-[0_-8px_40px_rgba(40,20,90,0.22)]',
+          'relative mx-auto flex max-h-[88dvh] w-full max-w-lg flex-col rounded-t-[1.75rem] bg-paper shadow-pop',
           !dragging && 'transition-transform duration-200 motion-reduce:transition-none',
         )}
         style={{ transform: visible ? `translateY(${dragY}px)` : 'translateY(100%)' }}

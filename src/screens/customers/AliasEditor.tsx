@@ -1,12 +1,15 @@
 /**
  * Los alias. This is where the sale that started on TikTok as @maria23 and
- * closed on WhatsApp as María Fernanda becomes one person, so adding one is a
- * field and a button in place, never another screen.
+ * closed on WhatsApp as María Fernanda becomes one person.
+ *
+ * It used to sit expanded on the customer screen, above everything else. That
+ * cost two hundred pixels of open form at the top of every profile for a list
+ * that is usually empty and gets touched once per person, so it moved in here,
+ * next to the name and the phone it belongs with.
  */
 import { Plus, X } from 'lucide-react'
 import { useState } from 'react'
-import { Card } from '../../ui'
-import { TextField } from '../orders/fields'
+import { TextField } from '../../ui'
 
 export interface AliasEditorProps {
   aliases: readonly string[]
@@ -25,7 +28,9 @@ export function AliasEditor({ aliases, onAdd, onRemove }: AliasEditorProps) {
   }
 
   return (
-    <Card className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
+      <span className="px-1 text-[0.9375rem] font-medium text-muted">Alias</span>
+
       {aliases.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {aliases.map((alias) => (
@@ -47,10 +52,9 @@ export function AliasEditor({ aliases, onAdd, onRemove }: AliasEditorProps) {
         </div>
       )}
 
-      <div className="flex items-end gap-2">
+      <div className="flex items-center gap-2">
         <TextField
           className="min-w-0 flex-1"
-          label="Nuevo alias"
           value={draft}
           onChange={setDraft}
           placeholder="@usuario o celular"
@@ -61,11 +65,11 @@ export function AliasEditor({ aliases, onAdd, onRemove }: AliasEditorProps) {
           onClick={add}
           disabled={draft.trim() === ''}
           aria-label="Agregar alias"
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand text-white disabled:opacity-40"
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-field bg-brand text-white disabled:opacity-40"
         >
           <Plus size={26} aria-hidden="true" />
         </button>
       </div>
-    </Card>
+    </div>
   )
 }

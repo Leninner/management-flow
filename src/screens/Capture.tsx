@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react'
 import { campaigns, customers as customerRepo, orders } from '../data'
 import type { Campaign, Customer, Order } from '../db/types'
 import type { PastItem } from '../domain'
-import { normalizeName } from '../domain'
 import {
+  Avatar,
   BigButton,
   Card,
   EmptyState,
@@ -14,8 +14,8 @@ import {
   Stepper,
   useNavigation,
 } from '../ui'
-import { CapturedList, type CaptureEntry } from './capture/CapturedList'
-import { Avatar, CustomerStep } from './capture/CustomerStep'
+import { CustomerStep, type ChosenCustomer } from './capture/CustomerStep'
+import { OrderCard } from './capture/OrderCard'
 import { ProductStep, type ChosenProduct } from './capture/ProductStep'
 import { firstName } from './today/format'
 
@@ -42,10 +42,9 @@ interface CaptureData {
 export function Capture() {
   const { go } = useNavigation()
 
-  const [customer, setCustomer] = useState<Customer | null>(null)
+  const [customer, setCustomer] = useState<ChosenCustomer | null>(null)
   const [product, setProduct] = useState<ChosenProduct | null>(null)
   const [quantity, setQuantity] = useState(1)
-  const [captures, setCaptures] = useState<CaptureEntry[]>([])
   const [saving, setSaving] = useState(false)
 
   const data = useLiveQuery<CaptureData>(async () => {
@@ -94,27 +93,17 @@ export function Capture() {
     if (!campaign || !customer || !product || saving) return
     setSaving(true)
     try {
+      // A person she has never sold to becomes real here and not a keystroke
+      // earlier: backing out of the screen must not leave a customer behind.
+      const person = customer.customer ?? (await customerRepo.create({ name: customer.name }))
+      if (!customer.customer) setCustomer({ name: person.name, customer: person })
+
       // Never creates an order directly: one order per customer per campaign
       // is what keeps a single total, a single payment and a single freight.
-      const order = await orders.addItem({
+      await orders.addItem({
         campaignId: campaign.id,
-        customerId: customer.id,
+        customerId: person.id,
         item: { name: product.name, quantity, price: product.price },
-      })
-      const key = `${order.id}::${normalizeName(product.name)}`
-      setCaptures((current) => {
-        const previous = current.find((entry) => entry.key === key)
-        return [
-          {
-            key,
-            orderId: order.id,
-            customerId: customer.id,
-            customerName: customer.name,
-            itemName: product.name,
-            quantity: (previous?.quantity ?? 0) + quantity,
-          },
-          ...current.filter((entry) => entry.key !== key),
-        ]
       })
       setProduct(null)
       setQuantity(1)
@@ -123,20 +112,13 @@ export function Capture() {
     }
   }
 
-  async function undo(entry: CaptureEntry) {
-    const order = await orders.get(entry.orderId)
-    const index =
-      order?.items.findIndex((item) => normalizeName(item.name) === normalizeName(entry.itemName)) ??
-      -1
-    if (index >= 0) {
-      const left = await orders.removeItem(entry.orderId, index)
-      // An order with nothing left in it is not an order, it is noise on every
-      // other screen. A cancelled order gets deleted.
-      if (left.items.length === 0 && left.paidAmount === 0 && !left.confirmed) {
-        await orders.remove(entry.orderId)
-      }
+  async function removeItem(orderId: string, index: number) {
+    const left = await orders.removeItem(orderId, index)
+    // An order with nothing left in it is not an order, it is noise on every
+    // other screen. A cancelled order gets deleted.
+    if (left.items.length === 0 && left.paidAmount === 0 && !left.confirmed) {
+      await orders.remove(orderId)
     }
-    setCaptures((current) => current.filter((item) => item.key !== entry.key))
   }
 
   function changeCustomer() {
@@ -146,6 +128,14 @@ export function Capture() {
   }
 
   if (!data) return null
+
+  const known = customer?.customer
+  // One order per customer per campaign, so there is at most one of these.
+  const openOrder = known
+    ? data.orderList.find(
+        (order) => order.campaignId === campaign?.id && order.customerId === known.id,
+      )
+    : undefined
 
   if (!campaign) {
     return (
@@ -164,7 +154,7 @@ export function Capture() {
         <CustomerStep recent={recent} onPick={setCustomer} />
       ) : (
         <>
-          <div className="mt-3 flex items-center gap-3 rounded-full bg-card p-1.5 pl-2 shadow-card">
+          <div className="mt-3 flex items-center gap-3 rounded-full border border-line bg-card p-1.5 pl-2">
             <Avatar name={customer.name} />
             <span className="min-w-0 flex-1 truncate text-[1.1875rem] font-bold">
               {customer.name}
@@ -173,11 +163,27 @@ export function Capture() {
               type="button"
               onClick={changeCustomer}
               aria-label="Cambiar de cliente"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-tint text-muted active:bg-brand-soft"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-fill text-muted active:bg-brand-soft"
             >
               <X size={20} aria-hidden="true" />
             </button>
           </div>
+
+          {/*
+            Above the product step, not below it: with the suggestion list open
+            the order fell off the bottom of the screen, which is exactly when
+            she wants to confirm what just went in and what it adds up to. It
+            also makes the rule visible — everything joins this one order.
+          */}
+          {openOrder && openOrder.items.length > 0 && (
+            <>
+              <SectionHeader title="Su pedido" count={openOrder.items.length} />
+              <OrderCard
+                order={openOrder}
+                onRemoveItem={(index) => removeItem(openOrder.id, index)}
+              />
+            </>
+          )}
 
           {!product ? (
             <ProductStep history={history} onChoose={setProduct} />
@@ -200,7 +206,7 @@ export function Capture() {
                   type="button"
                   onClick={() => setProduct(null)}
                   aria-label="Cambiar de producto"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-tint text-muted active:bg-brand-soft"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-fill text-muted active:bg-brand-soft"
                 >
                   <X size={20} aria-hidden="true" />
                 </button>
@@ -212,15 +218,10 @@ export function Capture() {
               </div>
             </Card>
           )}
+
         </>
       )}
 
-      {captures.length > 0 && (
-        <>
-          <SectionHeader title="En este live" count={captures.length} />
-          <CapturedList entries={captures} onRemove={undo} />
-        </>
-      )}
 
       {/*
         The one big button only exists once the product is picked, which is

@@ -20,7 +20,7 @@ export function OrderMenu({ onDelete }: { onDelete: () => void }) {
         onClick={() => setOpen(true)}
         aria-label="Más opciones"
         aria-expanded={open}
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-card text-brand shadow-card active:bg-brand-soft"
+        className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-card text-brand active:bg-brand-soft"
       >
         <MoreHorizontal size={24} aria-hidden="true" />
       </button>

@@ -2,9 +2,7 @@ import { Plus, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { PastItem } from '../../domain'
 import { productSuggestions } from '../../domain'
-import { BigButton, Card, formatMoney, Row, SearchField } from '../../ui'
-import { AmountField, parseAmount } from '../orders/fields'
-import { TextField } from '../today/TextField'
+import { BigButton, Card, formatMoney, MoneyField, parseAmount, Row, SearchField, TextField } from '../../ui'
 
 const MAX_SUGGESTIONS = 5
 
@@ -50,11 +48,10 @@ export function ProductStep({
     setNewOpen(true)
   }
 
-  /** Enter takes the best guess; with nothing to guess it opens the new one. */
+  /** Enter takes the best guess. With nothing to guess, the price is inline. */
   function submit() {
     const best = suggestions[0]
     if (best) onChoose({ name: best.name, price: best.price })
-    else if (typed !== '') openNew()
   }
 
   function saveNew(price: number) {
@@ -66,7 +63,7 @@ export function ProductStep({
 
   return (
     <>
-      <h2 className="px-1 pt-5 pb-3 text-[1.375rem] font-bold">¿Qué se lleva?</h2>
+      <h2 className="px-1 pt-5 pb-3 text-[1.375rem] font-semibold">¿Qué se lleva?</h2>
 
       {newOpen ? (
         /*
@@ -89,13 +86,13 @@ export function ProductStep({
               type="button"
               onClick={() => setNewOpen(false)}
               aria-label="Cancelar"
-              className="mt-7 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-tint text-muted active:bg-brand-soft"
+              className="mt-7 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-fill text-muted active:bg-brand-soft"
             >
               <X size={20} aria-hidden="true" />
             </button>
           </div>
 
-          <AmountField
+          <MoneyField
             label="Precio"
             value={newPrice}
             onChange={setNewPrice}
@@ -126,11 +123,6 @@ export function ProductStep({
           />
 
           <div className="flex flex-col gap-2 pt-3">
-            {typed !== '' && !known && (
-              <BigButton floating={false} variant="quiet" icon={Plus} onClick={openNew}>
-                <span className="min-w-0 truncate">Nuevo: {typed}</span>
-              </BigButton>
-            )}
             {suggestions.map((suggestion) => (
               <Row
                 key={suggestion.name}
@@ -143,6 +135,36 @@ export function ProductStep({
                 onClick={() => onChoose({ name: suggestion.name, price: suggestion.price })}
               />
             ))}
+
+            {/*
+              The history has nothing to offer, so there is nothing to choose
+              between and no reason to ask her to confirm creating it. What she
+              typed is the product; only the price is still missing.
+            */}
+            {typed !== '' && suggestions.length === 0 && (
+              <Card className="flex flex-col gap-4">
+                <span className="block text-xl leading-tight font-semibold">{typed}</span>
+                <MoneyField
+                  label="Precio"
+                  value={newPrice}
+                  onChange={setNewPrice}
+                  onSubmit={() => onChoose({ name: typed, price: typedPrice })}
+                />
+                <BigButton
+                  floating={false}
+                  onClick={() => onChoose({ name: typed, price: typedPrice })}
+                >
+                  {typedPrice > 0 ? 'Listo' : 'Anotar sin precio'}
+                </BigButton>
+              </Card>
+            )}
+
+            {/* The history knows things, and none of them is this. Now it is a choice. */}
+            {typed !== '' && suggestions.length > 0 && !known && (
+              <BigButton floating={false} variant="quiet" icon={Plus} onClick={openNew}>
+                <span className="min-w-0 truncate">Nuevo: {typed}</span>
+              </BigButton>
+            )}
           </div>
         </>
       )}

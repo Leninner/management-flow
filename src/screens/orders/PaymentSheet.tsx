@@ -4,8 +4,7 @@
  * which is the only way back once a payment is recorded.
  */
 import { useEffect, useState } from 'react'
-import { BigButton, Row, Sheet } from '../../ui'
-import { AmountField, parseAmount } from './fields'
+import { BigButton, MoneyField, parseAmount, Row, Sheet } from '../../ui'
 
 export interface PaymentSheetProps {
   open: boolean
@@ -49,7 +48,7 @@ export function PaymentSheet({ open, onClose, balance, paid, onPay, onClear }: P
     >
       <div className="flex flex-col gap-3">
         <Row status={balance > 0 ? 'owes' : 'done'} title="Saldo" amount={balance} />
-        <AmountField label="Abonó" value={amount} onChange={setAmount} autoFocus onSubmit={save} />
+        <MoneyField label="Abonó" value={amount} onChange={setAmount} autoFocus onSubmit={save} />
         {balance > 0 && (
           <BigButton floating={false} variant="quiet" onClick={() => setAmount(balance.toFixed(2))}>
             Todo el saldo

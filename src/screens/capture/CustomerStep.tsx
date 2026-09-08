@@ -3,21 +3,38 @@ import { UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { customers } from '../../data'
 import type { Customer } from '../../db/types'
-import { BigButton, Row, SearchField } from '../../ui'
+import { Avatar, BigButton, Row, SearchField } from '../../ui'
 
 /** Enough to pick from without turning the screen into a directory. */
 const MAX_RESULTS = 6
 
+/**
+ * Who the order is for, which is not always somebody the app knows yet.
+ *
+ * A person she has never sold to is carried as a bare name until the item is
+ * actually written down, so abandoning the screen leaves nothing behind.
+ */
+export interface ChosenCustomer {
+  name: string
+  /** Absent while the person exists only as the name she typed. */
+  customer?: Customer
+}
+
 export interface CustomerStepProps {
   /** Who she sold to last, newest first. The whole point is not typing. */
   recent: readonly Customer[]
-  onPick: (customer: Customer) => void
+  onPick: (chosen: ChosenCustomer) => void
 }
 
 /**
- * Who the order is for. Picking is the loud path and creating is the quiet
- * one on purpose: every time she creates instead of picking, the same person
- * ends up in the app twice and her money gets split in two.
+ * Picking stays the loud path and creating the quiet one: every time she
+ * creates instead of picking, the same person ends up in the app twice and her
+ * money gets split across two orders.
+ *
+ * But that rule only earns its keep when there is something to tell apart.
+ * With no match at all there is no duplicate to make, so the name she typed is
+ * offered as an ordinary row and no button asks her to confirm a decision she
+ * has already made. With matches, they come first and creating stays explicit.
  *
  * The row of faces is what makes a live survivable. During a live the same
  * eight people buy over and over, and typing a name with one hand while
@@ -25,31 +42,24 @@ export interface CustomerStepProps {
  */
 export function CustomerStep({ recent, onPick }: CustomerStepProps) {
   const [query, setQuery] = useState('')
-  const [creating, setCreating] = useState(false)
 
   const results = useLiveQuery(() => customers.search(query), [query], [] as Customer[])
   const name = query.trim()
   const known = results.some((customer) => customer.name.toLowerCase() === name.toLowerCase())
-
-  async function create() {
-    if (name === '' || creating) return
-    setCreating(true)
-    try {
-      onPick(await customers.create({ name }))
-    } finally {
-      setCreating(false)
-    }
-  }
+  const nothingMatches = name !== '' && results.length === 0
 
   return (
     <>
-      <h2 className="px-1 pt-3 pb-3 text-[1.375rem] font-bold">¿Para quién?</h2>
+      <h2 className="px-1 pt-3 pb-3 text-[1.375rem] font-semibold">¿Para quién?</h2>
 
       <SearchField
         value={query}
         onChange={setQuery}
         placeholder="Nombre, @usuario o celular"
         autoFocus
+        onSubmit={() => {
+          if (nothingMatches) onPick({ name })
+        }}
       />
 
       {name === '' && recent.length > 0 && (
@@ -58,7 +68,7 @@ export function CustomerStep({ recent, onPick }: CustomerStepProps) {
             <button
               key={customer.id}
               type="button"
-              onClick={() => onPick(customer)}
+              onClick={() => onPick({ name: customer.name, customer })}
               className="flex w-16 shrink-0 flex-col items-center gap-1.5"
             >
               <Avatar name={customer.name} size="lg" />
@@ -72,46 +82,34 @@ export function CustomerStep({ recent, onPick }: CustomerStepProps) {
 
       {name !== '' && (
         <div className="flex flex-col gap-2 pt-3">
-          {!known && (
-            <BigButton floating={false} variant="quiet" icon={UserPlus} onClick={create} disabled={creating}>
-              <span className="min-w-0 truncate">Crear a {name}</span>
-            </BigButton>
-          )}
           {results.slice(0, MAX_RESULTS).map((customer) => (
             <Row
               key={customer.id}
               title={customer.name}
               subtitle={secondaryIdentity(customer)}
-              onClick={() => onPick(customer)}
+              onClick={() => onPick({ name: customer.name, customer })}
             />
           ))}
+
+          {/*
+            Nothing to tell apart: the name reads as an ordinary row, exactly
+            like picking somebody, instead of a button that asks her to agree
+            to create a record she never asked about.
+          */}
+          {nothingMatches && <Row title={name} onClick={() => onPick({ name })} />}
+
+          {/* Matches exist, and none of them is her. Now creating is a real choice. */}
+          {results.length > 0 && !known && (
+            <BigButton floating={false} variant="quiet" icon={UserPlus} onClick={() => onPick({ name })}>
+              <span className="min-w-0 truncate">Crear a {name}</span>
+            </BigButton>
+          )}
         </div>
       )}
     </>
   )
 }
 
-/**
- * A letter in a circle. Cheaper to recognise mid-live than a name is to read,
- * and it never depends on a photo the app has no way to get.
- */
-export function Avatar({ name, size = 'md' }: { name: string; size?: 'md' | 'lg' }) {
-  const box = size === 'lg' ? 'h-14 w-14 text-2xl' : 'h-11 w-11 text-xl'
-  return (
-    <span
-      aria-hidden="true"
-      className={`flex shrink-0 items-center justify-center rounded-full bg-brand-soft font-bold text-brand ${box}`}
-    >
-      {initial(name)}
-    </span>
-  )
-}
-
-/** "@karlita" reads as K, not as @. */
-function initial(name: string): string {
-  const letter = name.replace(/[^\p{L}\p{N}]/gu, '').charAt(0)
-  return letter === '' ? '?' : letter.toUpperCase()
-}
 
 function firstWord(name: string): string {
   return name.split(/\s+/)[0] ?? name

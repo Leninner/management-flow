@@ -2,6 +2,7 @@
 export * from './consolidation'
 export * from './customers'
 export * from './dates'
+export * from './finances'
 export * from './followUps'
 export * from './money'
 export * from './orders'

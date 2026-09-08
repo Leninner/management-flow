@@ -8,8 +8,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CapturedItem } from '../../data/orders'
 import { productSuggestions, type PastItem } from '../../domain'
-import { BigButton, Card, Row, SearchField, SectionHeader, Sheet, Stepper } from '../../ui'
-import { AmountField, parseAmount } from './fields'
+import { BigButton, Card, MoneyField, parseAmount, Row, SearchField, SectionHeader, Sheet, Stepper } from '../../ui'
 
 const MAX_SUGGESTIONS = 6
 
@@ -88,7 +87,7 @@ export function AddItemSheet({ open, onClose, history, onAdd }: AddItemSheetProp
           </span>
           <Stepper value={quantity} onChange={setQuantity} />
         </Card>
-        <AmountField label="Precio" value={price} onChange={setPrice} onSubmit={add} />
+        <MoneyField label="Precio" value={price} onChange={setPrice} onSubmit={add} />
       </div>
     </Sheet>
   )

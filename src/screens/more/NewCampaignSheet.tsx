@@ -5,9 +5,9 @@
  */
 import { useEffect, useState } from 'react'
 import { campaigns, orders } from '../../data'
-import { BigButton, SectionHeader, Sheet } from '../../ui'
+import { BigButton, SectionHeader, Sheet, TextField } from '../../ui'
 import { discardUnconfirmedOrders } from './campaignSwitch'
-import { ErrorNote, TextField } from './fields'
+import { ErrorNote } from './fields'
 import { todayInput } from './format'
 
 type Choice = 'carry' | 'discard'

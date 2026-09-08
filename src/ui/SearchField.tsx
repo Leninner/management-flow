@@ -34,7 +34,7 @@ export function SearchField({
   return (
     <div
       className={cx(
-        'flex min-h-14 items-center rounded-field border-2 border-line bg-card pl-4 focus-within:border-brand',
+        'flex min-h-14 items-center rounded-field border border-transparent bg-fill pl-4 transition-colors duration-150 ease-smooth focus-within:border-brand motion-reduce:transition-none',
         className,
       )}
     >

@@ -8,6 +8,7 @@ import {
   CalendarPlus,
   Check,
   Download,
+  CreditCard,
   Landmark,
   MessageCircle,
   Palette,
@@ -25,6 +26,7 @@ import {
   SectionHeader,
   Sheet,
   StatusPill,
+  TextArea,
   useNavigation,
 } from '../ui'
 import {
@@ -33,8 +35,10 @@ import {
   downloadBackup,
   LAST_BACKUP_KEY,
 } from './more/backupFile'
+import { cardSummary, readCardSettings } from './more/card'
+import { CardSheet } from './more/CardSheet'
 import { EditCampaignSheet } from './more/EditCampaignSheet'
-import { TextArea } from './more/fields'
+
 import { formatDay } from './more/format'
 import { NewCampaignSheet } from './more/NewCampaignSheet'
 import { previewTemplate } from './more/preview'
@@ -66,6 +70,7 @@ export function More() {
   const [bankDraft, setBankDraft] = useState<string | null>(null)
   const [restoring, setRestoring] = useState(false)
   const [editingCampaign, setEditingCampaign] = useState(false)
+  const [editingCard, setEditingCard] = useState(false)
   const [startingCampaign, setStartingCampaign] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -98,6 +103,7 @@ export function More() {
   const age = backupAge(values.get(LAST_BACKUP_KEY), nowIso())
   const bankAccount = values.get(BANK_ACCOUNT_KEY) ?? ''
   const templates = resolveTemplates(values)
+  const card = readCardSettings(values)
 
   async function saveBackup() {
     const file = await backup.exportBackup()
@@ -171,6 +177,14 @@ export function More() {
         onClick={() => setBankDraft(bankAccount)}
       />
 
+      <SectionHeader title="Tarjeta" />
+      <Row
+        icon={CreditCard}
+        title="Mi tarjeta"
+        subtitle={cardSummary(card) ?? 'Sin configurar'}
+        onClick={() => setEditingCard(true)}
+      />
+
       <SectionHeader title="Campaña" />
       <div className="flex flex-col gap-2">
         {campaign ? (
@@ -223,11 +237,13 @@ export function More() {
         <TextArea
           value={bankDraft ?? ''}
           onChange={setBankDraft}
-          label="Datos de la cuenta"
+          ariaLabel="Datos de la cuenta"
           placeholder={'Banco Pichincha\nAhorros 2201234567\nMaría Pérez · 1803456789'}
           rows={6}
         />
       </Sheet>
+
+      <CardSheet open={editingCard} onClose={() => setEditingCard(false)} card={card} />
 
       <RestoreSheet
         open={restoring}

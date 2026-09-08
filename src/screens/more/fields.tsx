@@ -1,73 +1,9 @@
 /**
- * The few form controls the settings tab needs and `src/ui` does not carry,
- * because nowhere else in the app types free text. Same 48px targets, same
- * tokens, same focus ring as SearchField.
+ * The two bits of settings chrome that are not inputs. Every control the tab
+ * types into now comes from `src/ui`.
  */
-import type { ReactNode, Ref } from 'react'
-import { Card, cx } from '../../ui'
-
-const FIELD =
-  'w-full rounded-field border-2 border-line bg-card text-[1.1875rem] text-ink outline-none placeholder:text-muted focus:border-brand'
-
-export function TextField({
-  value,
-  onChange,
-  label,
-  placeholder,
-  type = 'text',
-}: {
-  value: string
-  onChange: (value: string) => void
-  label: string
-  placeholder?: string
-  type?: 'text' | 'date'
-}) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="px-1 text-[0.9375rem] font-semibold text-muted">
-        {label}
-      </span>
-      <input
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        autoComplete="off"
-        autoCorrect="off"
-        className={cx(FIELD, 'min-h-14 px-4')}
-      />
-    </label>
-  )
-}
-
-export function TextArea({
-  value,
-  onChange,
-  label,
-  placeholder,
-  rows = 7,
-  ref,
-}: {
-  value: string
-  onChange: (value: string) => void
-  /** Read out to screen readers. The sheet title already says what this is. */
-  label: string
-  placeholder?: string
-  rows?: number
-  ref?: Ref<HTMLTextAreaElement>
-}) {
-  return (
-    <textarea
-      ref={ref}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      rows={rows}
-      aria-label={label}
-      placeholder={placeholder}
-      className={cx(FIELD, 'resize-none p-4 leading-snug')}
-    />
-  )
-}
+import type { ReactNode } from 'react'
+import { Card } from '../../ui'
 
 /** What went wrong, in red, where she is looking. Never a stack trace. */
 export function ErrorNote({ children }: { children: ReactNode }) {

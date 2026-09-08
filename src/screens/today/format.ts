@@ -44,6 +44,13 @@ export function daysLabel(days: number): string {
   return `${days} días`
 }
 
+/** "hoy", "mañana", "en 8 días". How far off a deadline still is. */
+export function inDaysLabel(days: number): string {
+  if (days <= 0) return 'hoy'
+  if (days === 1) return 'mañana'
+  return `en ${days} días`
+}
+
 /** The name she would type in WhatsApp, not the one in the ID card. */
 export function firstName(name: string): string {
   return name.trim().split(/\s+/)[0] ?? name

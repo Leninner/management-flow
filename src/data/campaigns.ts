@@ -72,6 +72,29 @@ export async function markArrived(id: string, arrivedAt: string = nowIso()): Pro
   return patch(id, { arrivedAt })
 }
 
+/**
+ * What Oriflame invoiced for this campaign, which is what her card was charged.
+ * Clearing it is not the same as setting zero: cleared means the invoice has
+ * not arrived, and profit stays silent instead of claiming she earned it all.
+ */
+export async function setSupplierInvoice(
+  id: string,
+  amount: number | undefined,
+): Promise<Campaign> {
+  if (amount !== undefined && (!Number.isFinite(amount) || amount < 0)) {
+    throw new Error(`An invoice cannot be ${amount}`)
+  }
+  return db.transaction('rw', db.campaigns, async () => {
+    const campaign = await db.campaigns.get(id)
+    if (!campaign) throw new Error(`Unknown campaign: ${id}`)
+    const updated: Campaign = { ...campaign }
+    if (amount === undefined) delete updated.supplierInvoiceAmount
+    else updated.supplierInvoiceAmount = amount
+    await db.campaigns.put(updated)
+    return updated
+  })
+}
+
 export async function close(id: string): Promise<Campaign> {
   return patch(id, { active: false })
 }

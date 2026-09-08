@@ -7,8 +7,7 @@
 import { useEffect, useState } from 'react'
 import type { Customer } from '../../db/types'
 import { matchesQuery } from '../../domain'
-import { BigButton, Row, SectionHeader, Sheet } from '../../ui'
-import { TextField } from '../orders/fields'
+import { BigButton, Row, SectionHeader, Sheet, TextField } from '../../ui'
 
 const MAX_MATCHES = 3
 const MIN_QUERY = 2

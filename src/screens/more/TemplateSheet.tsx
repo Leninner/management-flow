@@ -9,8 +9,8 @@
 import { RotateCcw } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { TemplateKey } from '../../content/templates'
-import { BigButton, Sheet } from '../../ui'
-import { Chip, TextArea } from './fields'
+import { BigButton, Sheet, TextArea } from '../../ui'
+import { Chip } from './fields'
 import { humanToken, PLACEHOLDER_LABEL, previewTemplate, toHuman, toStorage } from './preview'
 import type { EditableTemplate } from './templates'
 
@@ -77,7 +77,7 @@ export function TemplateSheet({ template, bankAccount, onClose, onSave }: Templa
           ref={area}
           value={draft}
           onChange={setDraft}
-          label={current.template.label}
+          ariaLabel={current.template.label}
           rows={6}
         />
 
@@ -94,7 +94,7 @@ export function TemplateSheet({ template, bankAccount, onClose, onSave }: Templa
 
         <div className="flex flex-col gap-2">
           <span className="px-1 text-[0.9375rem] font-semibold text-muted">Así le llega</span>
-          <div className="rounded-card bg-card p-3 shadow-card">
+          <div className="rounded-card border border-line bg-card p-3">
             <p className="ml-auto max-w-[17rem] rounded-[1.25rem] rounded-br-md bg-brand-soft px-4 py-3 text-[1.0625rem] leading-snug whitespace-pre-line text-ink">
               {previewTemplate(body, bankAccount)}
             </p>

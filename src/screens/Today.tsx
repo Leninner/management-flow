@@ -1,14 +1,33 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { CalendarCheck } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { campaigns, customers, orders, settings } from '../data'
 import type { Campaign, Customer, Order, Setting } from '../db/types'
-import { followUps, fromCents, orderBalanceCents } from '../domain'
-import { EmptyState, Row, SectionHeader, useNavigation } from '../ui'
+import {
+  campaignProfitCents,
+  campaignSoldCents,
+  daysBetween,
+  followUps,
+  fromCents,
+  nextCardCutoff,
+  orderBalanceCents,
+  toRecoverCents,
+} from '../domain'
+import {
+  EmptyState,
+  Money,
+  Row,
+  SectionHeader,
+  Stat,
+  StatGrid,
+  useNavigation,
+} from '../ui'
+import { readCardSettings } from './more/card'
 import { CampaignHeader } from './today/CampaignHeader'
 import { FirstRun } from './today/FirstRun'
 import { FollowUpRow } from './today/FollowUpRow'
-import { todayIso } from './today/format'
+import { inDaysLabel, todayIso } from './today/format'
+import { InvoiceSheet } from './today/InvoiceSheet'
 import { buildTemplates } from './today/messages'
 
 interface TodayData {
@@ -18,7 +37,7 @@ interface TodayData {
   settingList: Setting[]
 }
 
-/** The two summary rows only ever open these two views of Pedidos. */
+/** The two summary tiles that open a filtered list of Pedidos. */
 export type OrdersShortcut = 'toCollect' | 'toDeliver'
 
 export interface TodayProps {
@@ -31,12 +50,17 @@ export interface TodayProps {
 }
 
 /**
- * The home screen, and the to-do list of the day. Everything on it is either
- * a deadline, something to write, or money that has not come in yet.
+ * The home screen: the money, then the to-do list of the day.
+ *
+ * The money goes first because it is a glance and the list is work. Four tiles
+ * answer what she opens the app to find out — what she is earning, what has not
+ * been collected, how much of what she fronted with the card has not come back,
+ * and when that card closes — before she has read a single word.
  */
 export function Today({ onOpenOrders }: TodayProps) {
   const { go } = useNavigation()
   const today = todayIso()
+  const [editingInvoice, setEditingInvoice] = useState(false)
 
   function openOrders(filter: OrdersShortcut) {
     if (onOpenOrders) onOpenOrders(filter)
@@ -75,26 +99,100 @@ export function Today({ onOpenOrders }: TodayProps) {
   const orderById = new Map(data.orderList.map((entry) => [entry.id, entry]))
   const campaignById = new Map(data.campaignList.map((entry) => [entry.id, entry]))
   const templates = buildTemplates(data.settingList)
+  const values = new Map(data.settingList.map((entry) => [entry.key, entry.value]))
 
   // Every campaign, not only the open one: what somebody still owes from the
-  // last catalogue is exactly the money that gets lost, and these two rows have
-  // to say the same number as the Pedidos list they open.
+  // last catalogue is exactly the money that gets lost, and this tile has to
+  // say the same number as the Pedidos list it opens.
   const receivable = data.orderList.filter(
     (order) => order.confirmed && orderBalanceCents(order) > 0,
   )
   // Added up in cents by the domain. No total is ever stored.
-  const receivableTotal = fromCents(
-    receivable.reduce((cents, order) => cents + orderBalanceCents(order), 0),
-  )
+  const receivableCents = receivable.reduce((cents, order) => cents + orderBalanceCents(order), 0)
   const undelivered = data.orderList.filter((order) => order.confirmed && !order.deliveredAt)
+
+  const profitCents = campaignProfitCents(data.orderList, campaign)
+  const soldCents = campaignSoldCents(data.orderList, campaign.id)
+  const recoverCents = toRecoverCents(data.orderList, data.campaignList)
+
+  const card = readCardSettings(values)
+  const cardCutoff = nextCardCutoff(today, card.cutoffDay)
+
+  // No invoice yet means no profit to state. Rather than invent one, the tile
+  // shows what she has sold and the tap is how the invoice gets written down.
+  const earned = profitCents ?? soldCents
 
   return (
     <>
       <CampaignHeader campaign={campaign} today={today} />
 
-      <SectionHeader title="Hoy" count={pending.length} />
+      <div className="pt-3">
+        <StatGrid>
+          <Stat
+            label={profitCents === undefined ? 'Vendí' : 'Gano'}
+            // Early in a campaign the invoice is already paid and the sales
+            // are not in yet, so this is legitimately negative. Red says so.
+            value={<Money value={fromCents(earned)} size="lg" tone={earned < 0 ? 'owes' : undefined} />}
+            muted={earned === 0}
+            onClick={() => setEditingInvoice(true)}
+          />
+          <Stat
+            label="Por cobrar"
+            tone="owes"
+            value={
+              <span className="flex items-baseline gap-2">
+                <Money
+                  value={fromCents(receivableCents)}
+                  size="lg"
+                  tone={receivableCents > 0 ? 'owes' : undefined}
+                />
+                {receivable.length > 0 && (
+                  <span className="money text-[0.9375rem] font-semibold text-muted tabular-nums">
+                    ({receivable.length})
+                  </span>
+                )}
+              </span>
+            }
+            muted={receivableCents === 0}
+            onClick={() => openOrders('toCollect')}
+          />
+          <Stat
+            label="Falta recuperar"
+            tone="owes"
+            value={
+              <Money
+                value={fromCents(recoverCents)}
+                size="lg"
+                tone={recoverCents > 0 ? 'owes' : undefined}
+              />
+            }
+            muted={recoverCents === 0}
+            onClick={() => openOrders('toCollect')}
+          />
+          {cardCutoff ? (
+            <Stat
+              label="Tarjeta corta"
+              value={
+                <span className="text-[1.5rem] leading-none font-bold tracking-tight">
+                  {inDaysLabel(daysBetween(today, cardCutoff))}
+                </span>
+              }
+              onClick={() => go('more')}
+            />
+          ) : (
+            <Stat
+              label="Tarjeta"
+              value={<span className="text-[1.5rem] leading-none font-bold">Configurar</span>}
+              muted
+              onClick={() => go('more')}
+            />
+          )}
+        </StatGrid>
+      </div>
+
+      <SectionHeader title="Pendiente" count={pending.length} />
       {pending.length === 0 ? (
-        <EmptyState icon={CalendarCheck} line="Nada pendiente por hoy" />
+        <EmptyState compact icon={CalendarCheck} line="Nada pendiente por hoy" />
       ) : (
         <div className="flex flex-col gap-2">
           {pending.map((followUp) => {
@@ -117,22 +215,20 @@ export function Today({ onOpenOrders }: TodayProps) {
         </div>
       )}
 
-      <div className="flex flex-col gap-2 pt-6">
+      <div className="pt-6">
         <Row
-          status="owes"
-          title="Por cobrar"
-          amount={receivableTotal}
-          count={receivable.length}
-          onClick={() => openOrders('toCollect')}
-        />
-        <Row
-          status="pending"
+          status={undelivered.length > 0 ? 'pending' : undefined}
           title="Por entregar"
           count={undelivered.length}
           onClick={() => openOrders('toDeliver')}
         />
       </div>
 
+      <InvoiceSheet
+        open={editingInvoice}
+        onClose={() => setEditingInvoice(false)}
+        campaign={campaign}
+      />
     </>
   )
 }

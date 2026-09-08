@@ -4,33 +4,41 @@
  * Visual identity. The rule is that a screen must be understandable at a
  * glance, without reading: big numbers, small labels, colour carries state.
  *
- * Purple, because the app belongs to one person and it should feel like hers
- * rather than like a form. The type is the system face on purpose: on her
- * iPhone that is the same font as Mensajes and Ajustes, so nothing here reads
- * as foreign.
+ * The surface language is white paper with hairline rules, not tinted paper
+ * with drop shadows. A hairline survives direct sunlight on a phone held at
+ * arm's length; a soft shadow does not. Shadow is kept for the two things that
+ * genuinely float above the page: the hero button and a sheet.
+ *
+ * The type is the system face on purpose: on her iPhone that is the same font
+ * as Mensajes and Ajustes, so nothing here reads as foreign.
  */
 @theme {
-  /* Barely tinted lavender instead of pure white: less glare, and it makes a
-     plain white card read as raised without needing a border. */
-  --color-paper: #f7f5fc;
+  --color-paper: #ffffff;
   --color-card: #ffffff;
-  --color-ink: #1b1630;
-  --color-muted: #857d9b;
-  --color-line: #ece7f6;
+  /* A recessed surface, for things you type into and controls that sit inside
+     a card. On white, a fill reads as "input" faster than a border does. */
+  --color-fill: #f4f4f7;
+  --color-ink: #17161c;
+  --color-muted: #8c8b98;
+  /* The hairline. Every separation in the app is this one line. */
+  --color-line: #ecebf1;
 
-  /* Violet. Deliberately off the state colours so it never reads as a status. */
-  --color-brand: #5b2fe3;
-  --color-brand-dark: #4522b5;
-  --color-brand-soft: #efe9ff;
-  --color-brand-tint: #f6f2ff;
+  /* Violet, softened. Deliberately off the state colours so it never reads as
+     a status, and light enough that a solid button does not shout. */
+  --color-brand: #6d5efc;
+  --color-brand-dark: #5646e8;
+  --color-brand-soft: #efedff;
+  --color-brand-tint: #f7f6ff;
 
-  /* The three states. Learned once, instead of nine words read every time. */
+  /* The three states. Learned once, instead of nine words read every time.
+     On a white ground these are applied in small doses: a dot, an amount, a
+     pill. They no longer fill a whole card. */
   --color-owes: #e11d48;
   --color-pending: #f08c00;
   --color-done: #12b36a;
-  --color-owes-soft: #ffe7ec;
-  --color-pending-soft: #fff1d9;
-  --color-done-soft: #ddf7ea;
+  --color-owes-soft: #ffe9ee;
+  --color-pending-soft: #fff3de;
+  --color-done-soft: #e0f8ed;
   /* Darkened for small type on the soft fills, where the saturated tone fails. */
   --color-owes-ink: #8a0f2e;
   --color-pending-ink: #8a5300;
@@ -39,12 +47,16 @@
   --text-base: 1.0625rem; /* 17px floor for readability */
 
   --radius-card: 1.375rem;
-  --radius-field: 1.125rem;
+  --radius-field: 1rem;
+  --radius-tight: 0.875rem;
 
-  /* Purple-tinted, never grey: a grey shadow on lavender looks like dirt. */
-  --shadow-card: 0 2px 10px rgba(60, 30, 140, 0.06);
-  --shadow-lift: 0 10px 24px rgba(91, 47, 227, 0.3);
-  --shadow-pop: 0 18px 40px rgba(40, 20, 90, 0.22);
+  /* Only what actually floats. A card gets a hairline instead. */
+  --shadow-lift: 0 8px 22px rgba(109, 94, 252, 0.26);
+  --shadow-pop: 0 -10px 40px rgba(23, 22, 28, 0.13);
+
+  /* One easing for every press and every sheet, so the whole app moves the
+     same way. Decelerating: it arrives softly instead of stopping dead. */
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html {

@@ -119,7 +119,7 @@ function TabButton({
             </span>
           )}
         </span>
-        <span className={cx('text-[0.75rem]', active ? 'font-bold' : 'font-medium')}>{label}</span>
+        <span className={cx('text-[0.75rem]', active ? 'font-semibold' : 'font-medium')}>{label}</span>
       </button>
     </li>
   )

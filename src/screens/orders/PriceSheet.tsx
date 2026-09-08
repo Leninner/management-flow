@@ -3,8 +3,7 @@
  * often arrives without a price, and until it has one the total is a lie.
  */
 import { useEffect, useState } from 'react'
-import { BigButton, Sheet } from '../../ui'
-import { AmountField, parseAmount } from './fields'
+import { BigButton, MoneyField, parseAmount, Sheet } from '../../ui'
 
 export interface PriceSheetProps {
   open: boolean
@@ -40,7 +39,7 @@ export function PriceSheet({ open, onClose, name, price, onSave }: PriceSheetPro
         </BigButton>
       }
     >
-      <AmountField label="Precio" value={amount} onChange={setAmount} autoFocus onSubmit={save} />
+      <MoneyField label="Precio" value={amount} onChange={setAmount} autoFocus onSubmit={save} />
     </Sheet>
   )
 }

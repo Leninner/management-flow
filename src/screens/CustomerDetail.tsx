@@ -5,9 +5,13 @@
  * TikTok identity and the WhatsApp identity become one person, and the debt
  * carried from campaigns that already closed, which is where the money of this
  * business actually gets lost.
+ *
+ * The screen is ordered by what she came for: who this is, whether they owe
+ * her, what they have bought, and only then the maintenance. Editing lives
+ * behind the identity card, so nothing is an open form until she asks for one.
  */
 import { useLiveQuery } from 'dexie-react-hooks'
-import { MessageCircle, Merge, ShoppingBag, User, UserX } from 'lucide-react'
+import { ChevronRight, MessageCircle, Merge, ShoppingBag, UserX } from 'lucide-react'
 import { useState } from 'react'
 import {
   campaigns as campaignRepo,
@@ -15,8 +19,9 @@ import {
   orders as orderRepo,
 } from '../data'
 import { whatsappUrl } from '../content/whatsapp'
-import { carriedDebt, contactsOf, nowIso, normalizeText, orderBalance } from '../domain'
+import { carriedDebt, contactsOf, nowIso, orderBalance } from '../domain'
 import {
+  Avatar,
   BigButton,
   Card,
   EmptyState,
@@ -24,10 +29,10 @@ import {
   Money,
   Row,
   SectionHeader,
+  StatusDot,
   StatusPill,
   useNavigation,
 } from '../ui'
-import { AliasEditor } from './customers/AliasEditor'
 import { EditCustomerSheet } from './customers/EditCustomerSheet'
 import { MergeSheet } from './customers/MergeSheet'
 import { orderStatus, owedBy } from './orders/filters'
@@ -69,12 +74,8 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
   const campaignName = new Map(campaignList.map((campaign) => [campaign.id, campaign.name]))
   const today = todayIso()
 
-  function addAlias(alias: string) {
-    const key = normalizeText(alias)
-    if (key === '' || key === normalizeText(customer.name)) return
-    if (aliases.some((existing) => normalizeText(existing) === key)) return
-    void customerRepo.update(customer.id, { aliases: [...aliases, alias] })
-  }
+  // How she knows this person, in the order she would say it out loud.
+  const identity = [...aliases, customer.whatsapp].filter(Boolean).join(' · ')
 
   function markWritten() {
     void customerRepo.update(customer.id, { contacts: [...contactsOf(customer), nowIso()] })
@@ -83,38 +84,55 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
   return (
     <>
       <div className="flex flex-col gap-2 pt-4">
-        <Row
-          icon={User}
-          title={customer.name}
-          subtitle={[customer.whatsapp, customer.address].filter(Boolean).join(' · ')}
-          onClick={() => setSheet('edit')}
-        />
-
-        <Card className="flex flex-col gap-3">
-          <span className="text-[0.9375rem] font-semibold text-muted">
-            Debe
-          </span>
-          <Money value={owed} size="xl" tone={owed > 0 ? 'owes' : 'done'} />
-          {carried > 0 && (
-            <StatusPill status="owes" label={`${formatMoney(carried)} de campañas pasadas`} />
-          )}
+        <Card padded={false}>
+          <button
+            type="button"
+            onClick={() => setSheet('edit')}
+            className="flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-brand-soft"
+          >
+            <Avatar name={customer.name} size="lg" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[1.375rem] leading-tight font-semibold">
+                {customer.name}
+              </span>
+              {identity !== '' && (
+                <span className="mt-1 block truncate text-[0.9375rem] text-muted">{identity}</span>
+              )}
+            </span>
+            <ChevronRight size={22} className="shrink-0 text-muted/45" aria-hidden="true" />
+          </button>
         </Card>
-      </div>
 
-      <SectionHeader title="Alias" count={aliases.length} />
-      <AliasEditor
-        aliases={aliases}
-        onAdd={addAlias}
-        onRemove={(alias) =>
-          void customerRepo.update(customer.id, {
-            aliases: aliases.filter((existing) => existing !== alias),
-          })
-        }
-      />
+        {/*
+          A debt is the biggest thing on the screen only when there is one.
+          A green $0.00 at 36px used to be the largest element on the profile
+          of somebody who owes nothing, which is the most common case there is.
+        */}
+        {owed > 0 ? (
+          <Card>
+            <span className="text-[0.8125rem] font-semibold tracking-wide text-muted uppercase">
+              Debe
+            </span>
+            <span className="mt-1.5 block">
+              <Money value={owed} size="xl" tone="owes" />
+            </span>
+            {carried > 0 && (
+              <span className="mt-3 block">
+                <StatusPill status="owes" label={`${formatMoney(carried)} de campañas pasadas`} />
+              </span>
+            )}
+          </Card>
+        ) : (
+          <Card className="flex items-center gap-2.5">
+            <StatusDot status="done" />
+            <span className="text-[1.0625rem] font-semibold">Al día</span>
+          </Card>
+        )}
+      </div>
 
       <SectionHeader title="Pedidos" count={theirs.length} />
       {theirs.length === 0 ? (
-        <EmptyState icon={ShoppingBag} line="Todavía no te ha pedido" />
+        <EmptyState compact icon={ShoppingBag} line="Todavía no te ha pedido" />
       ) : (
         <div className="flex flex-col gap-2">
           {theirs.map((order) => (
@@ -130,11 +148,17 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
         </div>
       )}
 
-      <div className="pt-10">
+      <div className="pt-6">
         <Row icon={Merge} title="Fusionar con otro" onClick={() => setSheet('merge')} />
       </div>
 
-      {customer.whatsapp && (
+      {/*
+        There is always one primary action. Without a number the screen used to
+        have none at all, which is exactly the person who arrives from a live
+        as an @handle and nothing else, so the button becomes the thing that
+        fixes that.
+      */}
+      {customer.whatsapp ? (
         <BigButton
           icon={MessageCircle}
           href={whatsappUrl(customer.whatsapp, '')}
@@ -142,17 +166,22 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
         >
           WhatsApp
         </BigButton>
+      ) : (
+        <BigButton icon={MessageCircle} onClick={() => setSheet('edit')}>
+          Agregar WhatsApp
+        </BigButton>
       )}
 
       <EditCustomerSheet
         open={sheet === 'edit'}
         onClose={() => setSheet(null)}
         customer={customer}
-        onSave={({ name, whatsapp, address }) =>
+        onSave={({ name, whatsapp, address, aliases: nextAliases }) =>
           void customerRepo.update(customer.id, {
             name,
             whatsapp: whatsapp === '' ? undefined : whatsapp,
             address: address === '' ? undefined : address,
+            aliases: nextAliases,
           })
         }
       />

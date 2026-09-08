@@ -14,6 +14,12 @@ export interface Campaign {
   cutoffDate: string
   /** Set when the merchandise arrives from Oriflame. ISO date. */
   arrivedAt?: string
+  /**
+   * What Oriflame invoiced for this campaign, which is what she paid with her
+   * credit card. Absent means the invoice has not arrived, never that it is
+   * zero: profit and card recovery both stay silent until it does.
+   */
+  supplierInvoiceAmount?: number
   active: boolean
 }
 

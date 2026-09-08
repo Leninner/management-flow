@@ -3,8 +3,7 @@
  * and that amount is part of the total the customer owes.
  */
 import { useEffect, useState } from 'react'
-import { BigButton, Sheet } from '../../ui'
-import { AmountField, parseAmount } from './fields'
+import { BigButton, MoneyField, parseAmount, Sheet } from '../../ui'
 
 export interface ShippingSheetProps {
   open: boolean
@@ -45,7 +44,7 @@ export function ShippingSheet({ open, onClose, cost, onSave }: ShippingSheetProp
       }
     >
       <div className="flex flex-col gap-3">
-        <AmountField
+        <MoneyField
           label="Cuánto cuesta el envío"
           value={amount}
           onChange={setAmount}

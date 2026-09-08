@@ -2,15 +2,10 @@ import type { LucideIcon } from 'lucide-react'
 import { useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useActionSlot } from './AppShell'
+import { buttonClasses, type ButtonVariant } from './Button'
 import { cx } from './cx'
 
-export type BigButtonVariant = 'primary' | 'quiet' | 'danger'
-
-const VARIANT: Record<BigButtonVariant, string> = {
-  primary: 'bg-brand text-white shadow-lift active:bg-brand-dark',
-  quiet: 'bg-card text-ink shadow-card active:bg-brand-soft',
-  danger: 'bg-owes text-white active:bg-owes/90',
-}
+export type BigButtonVariant = Extract<ButtonVariant, 'primary' | 'quiet' | 'danger'>
 
 export interface BigButtonProps {
   children: ReactNode
@@ -34,6 +29,13 @@ export interface BigButtonProps {
   className?: string
 }
 
+/**
+ * The one big action of a screen, under the thumb.
+ *
+ * Built on the same class function as `Button` so there is a single definition
+ * of what a button looks like. It keeps its own component because it also owns
+ * the portal into the shell's action slot, which a normal button must not do.
+ */
 export function BigButton({
   children,
   onClick,
@@ -52,12 +54,14 @@ export function BigButton({
     return slot.claim()
   }, [floating, slot])
 
-  const classes = cx(
-    'flex min-h-[3.625rem] w-full items-center justify-center gap-2 rounded-full px-5 text-[1.1875rem] font-bold tracking-tight',
-    'transition-transform active:scale-[0.99] disabled:opacity-40 motion-reduce:transition-none',
-    VARIANT[variant],
-    className,
-  )
+  const classes = buttonClasses({
+    variant,
+    size: 'lg',
+    block: true,
+    // The only shadow left in the app besides a sheet: this one genuinely
+    // floats over content that scrolls underneath it.
+    className: cx(variant === 'primary' && 'shadow-lift', className),
+  })
 
   const content = (
     <>
