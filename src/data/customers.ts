@@ -95,8 +95,18 @@ export async function merge(targetId: string, sourceId: string): Promise<Custome
   })
 }
 
+/**
+ * Deletes the person and every order of theirs, in one transaction. An order
+ * whose customer is gone shows up nowhere and still counts in the campaign
+ * totals, so leaving it behind turns the consolidado into money that nobody
+ * owes.
+ */
 export async function remove(id: string): Promise<void> {
-  await db.customers.delete(id)
+  await db.transaction('rw', db.customers, db.orders, async () => {
+    const theirs = await db.orders.where('customerId').equals(id).primaryKeys()
+    if (theirs.length > 0) await db.orders.bulkDelete(theirs)
+    await db.customers.delete(id)
+  })
 }
 
 function sortByName(customers: Customer[]): Customer[] {

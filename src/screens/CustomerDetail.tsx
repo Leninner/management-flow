@@ -11,7 +11,7 @@
  * behind the identity card, so nothing is an open form until she asks for one.
  */
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ChevronRight, MessageCircle, Merge, ShoppingBag, UserX } from 'lucide-react'
+import { ChevronRight, MessageCircle, Merge, ShoppingBag, Trash2, User, UserX } from 'lucide-react'
 import { useState } from 'react'
 import {
   campaigns as campaignRepo,
@@ -24,9 +24,12 @@ import {
   Avatar,
   BigButton,
   Card,
+  ConfirmSheet,
   EmptyState,
   formatMoney,
+  HeaderAction,
   Money,
+  MoreMenu,
   Row,
   SectionHeader,
   StatusDot,
@@ -38,14 +41,14 @@ import { MergeSheet } from './customers/MergeSheet'
 import { orderStatus, owedBy } from './orders/filters'
 import { orderStateLine, todayIso } from './orders/format'
 
-type OpenSheet = 'edit' | 'merge' | null
+type OpenSheet = 'edit' | 'merge' | 'delete' | null
 
 export interface CustomerDetailProps {
   customerId: string
 }
 
 export function CustomerDetail({ customerId }: CustomerDetailProps) {
-  const { push } = useNavigation()
+  const { push, back } = useNavigation()
   const [sheet, setSheet] = useState<OpenSheet>(null)
 
   const data = useLiveQuery(async () => {
@@ -77,12 +80,30 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
   // How she knows this person, in the order she would say it out loud.
   const identity = [...aliases, customer.whatsapp].filter(Boolean).join(' · ')
 
+  async function removeCustomer() {
+    await customerRepo.remove(customer.id)
+    back()
+  }
+
   function markWritten() {
     void customerRepo.update(customer.id, { contacts: [...contactsOf(customer), nowIso()] })
   }
 
   return (
     <>
+      <HeaderAction>
+        <MoreMenu
+          items={[
+            {
+              label: 'Borrar el cliente',
+              icon: Trash2,
+              onSelect: () => setSheet('delete'),
+              danger: true,
+            },
+          ]}
+        />
+      </HeaderAction>
+
       <div className="flex flex-col gap-2 pt-4">
         <Card padded={false}>
           <button
@@ -194,6 +215,23 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
         orders={allOrders}
         onMerge={(sourceId) => void customerRepo.merge(customer.id, sourceId)}
       />
+
+      <ConfirmSheet
+        open={sheet === 'delete'}
+        onClose={() => setSheet(null)}
+        title="¿Borrar el cliente?"
+        confirmLabel="Sí, borrar"
+        onConfirm={() => void removeCustomer()}
+      >
+        <Row icon={User} title={customer.name} subtitle={customer.whatsapp} />
+        {theirs.length > 0 && (
+          <Row
+            icon={ShoppingBag}
+            title={theirs.length === 1 ? 'Se borra 1 pedido' : `Se borran ${theirs.length} pedidos`}
+            amount={owed}
+          />
+        )}
+      </ConfirmSheet>
     </>
   )
 }

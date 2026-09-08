@@ -2,16 +2,18 @@
  * Her messages. The defaults show through until she edits one; an edit is a
  * row in `settings` keyed by the template, so resetting is deleting that row.
  */
-import { DEFAULT_TEMPLATES, type MessageTemplate, type TemplateKey } from '../../content/templates'
+import {
+  DEFAULT_TEMPLATES,
+  TEMPLATE_LABEL,
+  type MessageTemplate,
+  type TemplateKey,
+} from '../../content/templates'
 
 export function templateSettingKey(key: TemplateKey): string {
   return `template.${key}`
 }
 
-/**
- * What each message can actually fill in. Offering {guia} on a message that is
- * sent before the merchandise exists would only produce empty holes.
- */
+/** What each message can actually fill in. */
 export const TEMPLATE_PLACEHOLDERS: Record<TemplateKey, readonly string[]> = {
   confirmation: ['{cliente}', '{items}', '{total}'],
   delivery: ['{cliente}'],
@@ -19,13 +21,14 @@ export const TEMPLATE_PLACEHOLDERS: Record<TemplateKey, readonly string[]> = {
   cutoff: ['{cliente}', '{corte}'],
   balance: ['{cliente}', '{saldo}', '{total}'],
   arrived: ['{cliente}'],
-  shipped: ['{cliente}', '{courier}', '{guia}'],
   repurchase: ['{cliente}'],
   reengage: ['{cliente}', '{dia}'],
 }
 
 export interface EditableTemplate {
   template: MessageTemplate
+  /** The one name this message carries everywhere. */
+  label: string
   /** Her version when she wrote one, the default when she has not. */
   body: string
   edited: boolean
@@ -37,6 +40,7 @@ export function resolveTemplates(overrides: ReadonlyMap<string, string>): Editab
     const override = overrides.get(templateSettingKey(template.key))
     return {
       template,
+      label: TEMPLATE_LABEL[template.key],
       body: override ?? template.body,
       edited: override !== undefined && override !== template.body,
       placeholders: TEMPLATE_PLACEHOLDERS[template.key],

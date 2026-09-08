@@ -65,7 +65,7 @@ export function TemplateSheet({ template, bankAccount, onClose, onSave }: Templa
     <Sheet
       open={template !== null}
       onClose={onClose}
-      title={current.template.label}
+      title={current.label}
       footer={
         <BigButton floating={false} onClick={() => onSave(current.template.key, body)}>
           Guardar
@@ -77,7 +77,7 @@ export function TemplateSheet({ template, bankAccount, onClose, onSave }: Templa
           ref={area}
           value={draft}
           onChange={setDraft}
-          ariaLabel={current.template.label}
+          ariaLabel={current.label}
           rows={6}
         />
 

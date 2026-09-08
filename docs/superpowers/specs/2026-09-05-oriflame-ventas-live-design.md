@@ -173,39 +173,42 @@ Tipografía base mínima 17px, área táctil mínima 48px, contraste AA.
 
 ## Plantillas de mensajes
 
-Editables por ella. Variables: `{cliente}`, `{items}`, `{total}`, `{saldo}`, `{corte}`, `{dia}`, `{cuenta}`, `{courier}`, `{guia}`. Estas son punto de partida, no su voz.
+Editables por ella. Variables: `{cliente}`, `{items}`, `{total}`, `{saldo}`, `{corte}`, `{dia}`, `{cuenta}`. Estas son punto de partida, no su voz.
 
-**Confirmación** (capturado en el live, sin confirmar)
+**Un solo nombre por mensaje**, y es el de abajo: el mismo en la lista de Más, en el título del editor y en el botón del pedido que lo va a mandar. Son verbos porque en los tres lugares lo que ella necesita saber es qué va a decir. Ninguno se llama "Confirmar pedido": la pantalla del pedido ya tiene un botón así que confirma sin escribirle a nadie.
+
+**Pedir que confirme** (capturado en el live, sin confirmar)
 > Hola {cliente}! Te anoté esto del live:
 > {items}
 > Son {total}. ¿Te lo confirmo?
 
-**Datos de entrega**
+**Preguntar la entrega**
 > {cliente}, ¿lo retiras aquí en Ambato o te lo mando?
 > Si es envío pásame la dirección con una referencia y a qué nombre.
 
-**Cuenta y total**
+**Pedir el pago**
 > {cliente}, quedó en {total}.
 > {cuenta}
 > Cuando hagas la transferencia me mandas la captura y te confirmo.
 
-**Se acerca el corte**
+**Avisar del cierre**
 > {cliente}, el catálogo cierra el {corte}. Si querías aumentar algo dime hasta ahí, después ya no alcanzo a meterlo en este pedido.
 
-**Saldo pendiente**
+**Recordar el saldo**
 > {cliente}, de tu pedido quedan {saldo}. Sin apuro, es para no perderme la cuenta.
 
-**Ya llegó**
+**Avisar que llegó**
 > {cliente}, ya llegó tu pedido. ¿Cuándo te queda bien pasar a retirarlo?
 
-**Despachado**
-> {cliente}, ya salió tu envío por {courier}. La guía es {guia}, con eso lo rastreas.
-
-**Recompra**
+**Ofrecer de nuevo**
 > Hola {cliente}, ya salió el catálogo nuevo. Me acordé de ti porque llegó algo parecido a lo que llevaste, ¿te mando la foto?
 
-**Reenganche**
+**Invitar al live**
 > {cliente}, ¿cómo has estado? Hago live este {dia} por si te quieres ver algo. Si prefieres te paso el catálogo por aquí.
+
+"Preguntar la entrega" es el único que no tiene disparador: sale sólo del botón del pedido, cuando está pagado, sin entregar y la campaña todavía no llega.
+
+No hay plantilla de despacho. La tenía, con `{courier}` y `{guia}`, y no la usaba nadie: ninguna de las dos funciones que eligen plantilla la nombraba y no existe dónde guardar un courier ni un número de guía, así que los dos huecos habrían salido vacíos. Si algún día se manda por courier, primero se guarda el dato.
 
 El botón abre WhatsApp con el mensaje ya escrito (`wa.me`). La app no lee WhatsApp, no manda sola y no usa bots. Ella revisa y manda.
 
@@ -215,13 +218,13 @@ Las reglas miden días desde el último elemento de `contactos`, no desde la fec
 
 | Situación | Dispara a los | Plantilla |
 |---|---|---|
-| Capturado en live, sin confirmar | 1 día | Confirmación |
-| Confirmado, sin pagar | 2 días | Cuenta y total |
-| Sin pagar y faltan 3 días al corte | inmediato | Se acerca el corte |
-| Abonó a medias | 3 días | Saldo pendiente |
-| Mercadería llegó, sin entregar | 2 días | Ya llegó |
-| Entregado hace 3 semanas | una vez | Recompra |
-| Cliente frecuente sin pedido esta campaña | 3 días antes del corte | Reenganche |
+| Capturado en live, sin confirmar | 1 día | Pedir que confirme |
+| Confirmado, sin pagar | 2 días | Pedir el pago |
+| Sin pagar y faltan 3 días al corte | inmediato | Avisar del cierre |
+| Abonó a medias | 3 días | Recordar el saldo |
+| Mercadería llegó, sin entregar | 2 días | Avisar que llegó |
+| Entregado hace 3 semanas | una vez | Ofrecer de nuevo |
+| Cliente frecuente sin pedido esta campaña | 3 días antes del corte | Invitar al live |
 
 Definiciones que los disparadores necesitan y no son obvias:
 

@@ -8,8 +8,6 @@ export interface TemplateVars {
   corte?: string
   dia?: string
   cuenta?: string
-  courier?: string
-  guia?: string
 }
 
 /** Replaces {placeholders}. Unknown or missing ones collapse to nothing. */

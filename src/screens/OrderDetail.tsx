@@ -6,7 +6,16 @@
  * items, the shipping and what was paid.
  */
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Check, DollarSign, MessageCircle, PackageX, Plus, Truck } from 'lucide-react'
+import {
+  Check,
+  DollarSign,
+  MessageCircle,
+  PackageX,
+  Plus,
+  RotateCcw,
+  Trash2,
+  Truck,
+} from 'lucide-react'
 import { useState } from 'react'
 import {
   campaigns as campaignRepo,
@@ -14,21 +23,23 @@ import {
   orders as orderRepo,
   settings as settingsRepo,
 } from '../data'
+import { TEMPLATE_LABEL } from '../content/templates'
 import { whatsappUrl } from '../content/whatsapp'
 import { orderBalance, orderTotal, toCents } from '../domain'
 import {
   BigButton,
   Card,
+  ConfirmSheet,
   EmptyState,
   formatMoney,
   HeaderAction,
   Money,
+  MoreMenu,
   Row,
   SectionHeader,
   useNavigation,
 } from '../ui'
 import { AddItemSheet } from './orders/AddItemSheet'
-import { ConfirmSheet } from './orders/ConfirmSheet'
 import { orderStatus } from './orders/filters'
 import { todayIso } from './orders/format'
 import { ItemList } from './orders/ItemList'
@@ -36,11 +47,9 @@ import { itemHistory } from './orders/items'
 import { PaymentSheet } from './orders/PaymentSheet'
 import { PriceSheet } from './orders/PriceSheet'
 import { ShippingSheet } from './orders/ShippingSheet'
-import { OrderMenu } from './orders/OrderMenu'
 import { OrderSteps, type OrderStep } from './orders/OrderSteps'
 import {
   bankAccountFrom,
-  ORDER_MESSAGE_LABEL,
   orderMessage,
   templateForOrder,
   templatesFrom,
@@ -112,17 +121,38 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
   ]
 
   // The message this order is asking for, named on the button that sends it.
-  const messageLabel = ORDER_MESSAGE_LABEL[templateForOrder(order, campaign, todayIso())]
+  const messageLabel = TEMPLATE_LABEL[templateForOrder(order, campaign, todayIso())]
 
   return (
     <>
       <HeaderAction>
-        <OrderMenu
-          onDelete={() => setSheet('delete')}
-          onUnconfirm={
-            order.confirmed ? () => void orderRepo.markConfirmed(order.id, false) : undefined
-          }
-          onFixPayment={toCents(paid) > 0 ? () => setSheet('payment') : undefined}
+        <MoreMenu
+          items={[
+            ...(order.confirmed
+              ? [
+                  {
+                    label: 'Desmarcar confirmado',
+                    icon: RotateCcw,
+                    onSelect: () => void orderRepo.markConfirmed(order.id, false),
+                  },
+                ]
+              : []),
+            ...(toCents(paid) > 0
+              ? [
+                  {
+                    label: 'Corregir el abono',
+                    icon: DollarSign,
+                    onSelect: () => setSheet('payment'),
+                  },
+                ]
+              : []),
+            {
+              label: 'Borrar el pedido',
+              icon: Trash2,
+              onSelect: () => setSheet('delete'),
+              danger: true,
+            },
+          ]}
         />
       </HeaderAction>
 

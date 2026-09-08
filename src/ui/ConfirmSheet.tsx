@@ -1,6 +1,7 @@
 /** Confirmation for the few actions that cannot be undone. */
 import type { ReactNode } from 'react'
-import { BigButton, Sheet } from '../../ui'
+import { BigButton } from './BigButton'
+import { Sheet } from './Sheet'
 
 export interface ConfirmSheetProps {
   open: boolean

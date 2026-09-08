@@ -16,8 +16,6 @@ export const PLACEHOLDER_LABEL: Record<string, string> = {
   '{corte}': 'fecha de corte',
   '{dia}': 'día del live',
   '{cuenta}': 'mi cuenta',
-  '{courier}': 'courier',
-  '{guia}': 'guía',
 }
 
 /**
@@ -32,8 +30,6 @@ const SAMPLE = {
   saldo: '$12.40',
   corte: '8 de septiembre',
   dia: 'viernes',
-  courier: 'Servientrega',
-  guia: '1234567890',
 } as const
 
 export function previewTemplate(body: string, bankAccount: string): string {

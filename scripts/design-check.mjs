@@ -222,7 +222,7 @@ await step('16-tarjeta', () => page.getByText('Mi tarjeta').click())
 await step('17-editor-mensaje', async () => {
   await page.getByRole('button', { name: 'Cerrar' }).last().click()
   await page.waitForTimeout(300)
-  await page.getByText('Cuenta y total').click()
+  await page.getByText('Pedir el pago').click()
 })
 
 console.log('\n===== ERRORES =====\n' + (errors.join('\n') || '(ninguno)'))

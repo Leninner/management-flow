@@ -177,7 +177,7 @@ export function More() {
           <Row
             key={entry.template.key}
             icon={MessageCircle}
-            title={entry.template.label}
+            title={entry.label}
             subtitle={firstLine(previewTemplate(entry.body, bankAccount))}
             onClick={() => setEditing(entry)}
           />
