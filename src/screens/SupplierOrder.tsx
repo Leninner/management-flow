@@ -105,29 +105,34 @@ export function SupplierOrder() {
       </div>
 
       {plan.unconfirmedOrders > 0 && (
-        <>
-          <SectionHeader title="Sin confirmar" />
+        /* The title states the fact and never moves; only the subtitle and the
+           button change, so the row cannot swap identity under her thumb. The
+           units live in the subtitle with the word attached: as a bare count on
+           the right they were the same number as the header and read as if the
+           whole order were unconfirmed. */
+        <div className="pt-4">
           <Row
             status={includeUnconfirmed ? 'pending' : undefined}
-            title={includeUnconfirmed ? 'Van en el pedido' : 'Fuera del pedido'}
-            subtitle={plural(plan.unconfirmedOrders, 'pedido', 'pedidos')}
-            count={plan.unconfirmedUnits}
+            title={`${plural(plan.unconfirmedOrders, 'pedido', 'pedidos')} sin confirmar`}
+            subtitle={`${plural(plan.unconfirmedUnits, 'unidad', 'unidades')} ${
+              includeUnconfirmed ? 'en el pedido' : 'fuera del pedido'
+            }`}
             actions={
               includeUnconfirmed ? (
                 <RowAction icon={X} onClick={() => setIncludeUnconfirmed(false)}>
-                  Sacarlas
+                  Sacar del pedido
                 </RowAction>
               ) : (
                 <RowAction icon={Undo2} onClick={() => setIncludeUnconfirmed(true)}>
-                  Volver a meterlas
+                  Volver a incluir
                 </RowAction>
               )
             }
           />
-        </>
+        </div>
       )}
 
-      <SectionHeader title="Productos" count={plan.lines.length} />
+      <SectionHeader title="Qué pedir" count={plan.lines.length} />
       {plan.lines.length === 0 ? (
         <EmptyState icon={ShoppingBag} line="Todavía no hay nada que pedir" />
       ) : (
@@ -144,16 +149,17 @@ export function SupplierOrder() {
         </div>
       )}
 
-      <SectionHeader title="Mercadería" />
-      {campaign.arrivedAt ? (
-        <Row status="done" title="Ya llegó" subtitle={formatDay(campaign.arrivedAt)} />
-      ) : (
-        <Row
-          icon={PackageCheck}
-          title="Ya llegó la mercadería"
-          onClick={() => setAskingArrival(true)}
-        />
-      )}
+      <div className="pt-4">
+        {campaign.arrivedAt ? (
+          <Row status="done" title="Ya llegó la mercadería" subtitle={formatDay(campaign.arrivedAt)} />
+        ) : (
+          <Row
+            icon={PackageCheck}
+            title="Ya llegó la mercadería"
+            onClick={() => setAskingArrival(true)}
+          />
+        )}
+      </div>
 
       <Sheet open={openLine !== null} onClose={() => setOpenLine(null)} title={line?.name}>
         <div className="flex flex-col gap-2">

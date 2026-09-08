@@ -7,15 +7,12 @@ import type { PastItem } from '../domain'
 import {
   Avatar,
   BigButton,
-  Card,
   EmptyState,
-  formatMoney,
   SectionHeader,
-  Stepper,
   useNavigation,
 } from '../ui'
 import { CustomerStep, type ChosenCustomer } from './capture/CustomerStep'
-import { OrderCard } from './capture/OrderCard'
+import { ItemList } from './orders/ItemList'
 import { ProductStep, type ChosenProduct } from './capture/ProductStep'
 import { firstName } from './today/format'
 
@@ -170,55 +167,34 @@ export function Capture() {
           </div>
 
           {/*
-            Above the product step, not below it: with the suggestion list open
-            the order fell off the bottom of the screen, which is exactly when
-            she wants to confirm what just went in and what it adds up to. It
-            also makes the rule visible — everything joins this one order.
+            One card: what is already written down plus the line being picked,
+            tinted because it is not saved yet. A second card for the product
+            made the same order read as two unrelated things.
           */}
-          {openOrder && openOrder.items.length > 0 && (
+          {(openOrder?.items.length || product) && (
             <>
-              <SectionHeader title="Su pedido" count={openOrder.items.length} />
-              <OrderCard
-                order={openOrder}
-                onRemoveItem={(index) => removeItem(openOrder.id, index)}
+              <SectionHeader title="Su pedido" />
+              <ItemList
+                items={openOrder?.items ?? []}
+                shipping={openOrder?.shippingCost ?? 0}
+                pending={
+                  product
+                    ? { name: product.name, price: product.price, quantity }
+                    : undefined
+                }
+                onRemove={(index) => {
+                  if (openOrder) void removeItem(openOrder.id, index)
+                }}
+                onPendingQuantityChange={setQuantity}
+                onDiscardPending={() => {
+                  setProduct(null)
+                  setQuantity(1)
+                }}
               />
             </>
           )}
 
-          {!product ? (
-            <ProductStep history={history} onChoose={setProduct} />
-          ) : (
-            <Card className="mt-5 flex flex-col gap-4">
-              <div className="flex items-start gap-3">
-                <span className="min-w-0 flex-1">
-                  <span className="block text-xl leading-tight font-bold">{product.name}</span>
-                  {product.price > 0 ? (
-                    <span className="money mt-1.5 block text-[1.0625rem] font-bold text-brand">
-                      {formatMoney(product.price)}
-                    </span>
-                  ) : (
-                    <span className="mt-2 inline-flex items-center rounded-full bg-pending-soft px-3 py-1 text-[0.875rem] font-bold text-pending-ink">
-                      Falta el precio
-                    </span>
-                  )}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setProduct(null)}
-                  aria-label="Cambiar de producto"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-fill text-muted active:bg-brand-soft"
-                >
-                  <X size={20} aria-hidden="true" />
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
-                <span className="text-[1.0625rem] font-semibold text-muted">Cantidad</span>
-                <Stepper value={quantity} onChange={setQuantity} />
-              </div>
-            </Card>
-          )}
-
+          {!product && <ProductStep history={history} onChoose={setProduct} />}
         </>
       )}
 

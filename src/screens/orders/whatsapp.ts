@@ -50,6 +50,25 @@ export function templateForOrder(
   return 'repurchase'
 }
 
+/**
+ * What the WhatsApp button is about to send.
+ *
+ * The button used to say only "WhatsApp" while `templateForOrder` picked
+ * between seven different messages behind it, so there was no way to know what
+ * was going out until WhatsApp opened with it already written.
+ */
+export const ORDER_MESSAGE_LABEL: Record<TemplateKey, string> = {
+  confirmation: 'Pedir que confirme',
+  cutoff: 'Avisar del cierre',
+  payment: 'Pedir el pago',
+  balance: 'Recordar el saldo',
+  arrived: 'Avisar que llegó',
+  delivery: 'Preguntar la entrega',
+  shipped: 'Pasar la guía',
+  repurchase: 'Ofrecer de nuevo',
+  reengage: 'Invitar al live',
+}
+
 export interface OrderMessageInput {
   order: Order
   customer: Customer | undefined

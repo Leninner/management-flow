@@ -11,7 +11,6 @@ import { SupplierOrder } from './screens/SupplierOrder'
 import { Today, type OrdersShortcut } from './screens/Today'
 import {
   AppShell,
-  Gallery,
   NavigationProvider,
   useNavigation,
   type Screen,
@@ -23,7 +22,6 @@ const VIEW_TITLE: Record<View['kind'], string> = {
   orderDetail: 'Pedido',
   customerDetail: 'Cliente',
   supplierOrder: 'Pedido a Oriflame',
-  gallery: 'Diseño',
 }
 
 function renderView(view: View): ReactNode {
@@ -36,8 +34,6 @@ function renderView(view: View): ReactNode {
       return <CustomerDetail customerId={view.customerId} />
     case 'supplierOrder':
       return <SupplierOrder />
-    case 'gallery':
-      return <Gallery />
   }
 }
 

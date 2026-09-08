@@ -14,7 +14,6 @@ export { cx } from './cx'
 export { EmptyState, type EmptyStateProps } from './EmptyState'
 export { Field, fieldBox, type FieldProps, type FieldSize } from './Field'
 export { HeaderAction } from './HeaderAction'
-export { Gallery } from './Gallery'
 export { formatMoney, Money, type MoneyProps, type MoneySize } from './Money'
 export { MoneyField, parseAmount, sanitizeAmount, type MoneyFieldProps } from './MoneyField'
 export {

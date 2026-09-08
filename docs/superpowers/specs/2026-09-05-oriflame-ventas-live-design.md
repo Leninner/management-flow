@@ -132,7 +132,9 @@ Sin esto ella abre 12 pedidos y suma a mano. Si pide 4 en vez de 5, alguien se q
 
 ### Más
 
-Respaldo (exportar e importar), plantillas de mensajes, datos de cuenta bancaria, campaña.
+Datos de cuenta bancaria, tarjeta, campaña, plantillas de mensajes y, al final, respaldo
+(exportar e importar). Entra a configurar lo suyo, no a administrar una base de datos: el
+respaldo es una tarea de mantenimiento y va último, con su botón grande al alcance del pulgar.
 
 ### Primer uso
 

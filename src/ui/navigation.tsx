@@ -18,7 +18,6 @@ export type View =
   | { kind: 'orderDetail'; orderId: string }
   | { kind: 'customerDetail'; customerId: string }
   | { kind: 'supplierOrder' }
-  | { kind: 'gallery' }
 
 export interface Navigation {
   /** The selected tab. Always one of the four, even while a view is open. */

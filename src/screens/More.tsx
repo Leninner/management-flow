@@ -1,6 +1,7 @@
 /**
- * The settings tab. Backup first and loudest: IndexedDB can be evicted by the
- * browser at any time and that file is the only copy of who owes her money.
+ * The settings tab. She opens it to set up how she gets paid, not to administer
+ * a database, so her own data comes first and the backup chore goes last -- which
+ * also puts its big button where the thumb already is.
  */
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
@@ -11,7 +12,6 @@ import {
   CreditCard,
   Landmark,
   MessageCircle,
-  Palette,
   ShoppingBag,
   Upload,
 } from 'lucide-react'
@@ -130,45 +130,6 @@ export function More() {
 
   return (
     <>
-      <SectionHeader title="Respaldo" />
-      <div className="flex flex-col gap-2">
-        <Row
-          status={age.status}
-          title="Último respaldo"
-          subtitle={age.label}
-          count={age.days}
-          trailing={age.pill ? <StatusPill status={age.status} label={age.pill} /> : undefined}
-          actions={
-            <RowAction icon={Upload} onClick={() => setRestoring(true)}>
-              Restaurar
-            </RowAction>
-          }
-        />
-        {persisted === false && (
-          <Row
-            status="owes"
-            title="El navegador puede borrar todo"
-            subtitle="Guarda el respaldo seguido"
-          />
-        )}
-        <BigButton floating={false} icon={saved ? Check : Download} onClick={saveBackup}>
-          {saved ? 'Guardado' : 'Guardar respaldo'}
-        </BigButton>
-      </div>
-
-      <SectionHeader title="Mensajes" />
-      <div className="flex flex-col gap-2">
-        {templates.map((entry) => (
-          <Row
-            key={entry.template.key}
-            icon={MessageCircle}
-            title={entry.template.label}
-            subtitle={firstLine(previewTemplate(entry.body, bankAccount))}
-            onClick={() => setEditing(entry)}
-          />
-        ))}
-      </div>
-
       <SectionHeader title="Cuenta" />
       <Row
         icon={Landmark}
@@ -210,12 +171,44 @@ export function More() {
         />
       </div>
 
-      <SectionHeader title="Diseño" />
-      <Row
-        icon={Palette}
-        title="Las piezas de la app"
-        onClick={() => push({ kind: 'gallery' })}
-      />
+      <SectionHeader title="Mensajes" />
+      <div className="flex flex-col gap-2">
+        {templates.map((entry) => (
+          <Row
+            key={entry.template.key}
+            icon={MessageCircle}
+            title={entry.template.label}
+            subtitle={firstLine(previewTemplate(entry.body, bankAccount))}
+            onClick={() => setEditing(entry)}
+          />
+        ))}
+      </div>
+
+      <SectionHeader title="Respaldo" />
+      <div className="flex flex-col gap-2">
+        <Row
+          status={age.status}
+          title="Último respaldo"
+          subtitle={age.label}
+          count={age.days}
+          trailing={age.pill ? <StatusPill status={age.status} label={age.pill} /> : undefined}
+          actions={
+            <RowAction icon={Upload} onClick={() => setRestoring(true)}>
+              Restaurar
+            </RowAction>
+          }
+        />
+        {persisted === false && (
+          <Row
+            status="owes"
+            title="El navegador puede borrar todo"
+            subtitle="Guarda el respaldo seguido"
+          />
+        )}
+        <BigButton floating={false} icon={saved ? Check : Download} onClick={saveBackup}>
+          {saved ? 'Guardado' : 'Guardar respaldo'}
+        </BigButton>
+      </div>
 
       <TemplateSheet
         template={editing}

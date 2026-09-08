@@ -159,7 +159,13 @@ await step('05-anotar-cliente', () => page.getByText('María', { exact: true }).
 await step('06-anotar-producto-existente', async () => {
   await page.getByPlaceholder('Producto o código').fill('38588')
 })
+// María ya lleva 2 de este: tiene que tomar su propia fila, no abrir una segunda.
+await step('06b-producto-repetido', async () => {
+  await page.getByRole('button', { name: /38588 Novage Ecollagen.*la última vez/ }).click()
+})
 await step('07-anotar-producto-nuevo', async () => {
+  await page.getByRole('button', { name: /^Descartar 38588/ }).click()
+  await page.waitForTimeout(300)
   await page.getByPlaceholder('Producto o código').fill('90210 Crema nueva')
 })
 await step('08-anotado', async () => {
@@ -189,7 +195,7 @@ await step('12-pedido-menu', () => page.getByRole('button', { name: 'Más opcion
 await step('13-pedido-pagado', async () => {
   await page.getByRole('button', { name: 'Cerrar' }).last().click()
   await page.waitForTimeout(300)
-  await page.getByRole('button', { name: /Pagado/ }).click()
+  await page.getByRole('button', { name: /Pagó todo/ }).click()
 })
 
 await step('14-clientes', async () => {
