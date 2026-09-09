@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Campaign, CampaignProduct, Customer, Order, Setting } from './types'
-import { splitProductCode } from '../domain/text'
+import type { Campaign, CampaignProduct, Customer, Order, OrderItem, Setting } from './types'
+import { productKey, splitProductCode } from '../domain/text'
 
 export class SalesDatabase extends Dexie {
   campaigns!: EntityTable<Campaign, 'id'>
@@ -53,7 +53,82 @@ export class SalesDatabase extends Dexie {
           await tx.table('campaignProducts').put(price === undefined ? product : { ...product, price })
         }
       })
+
+    /**
+     * v3: repair the lines the old, stricter code rule left broken.
+     *
+     * The field she types into accepted four-digit codes and the parser only
+     * accepted five, so "7898 Bálsamo" was stored with a code and "7898" on its
+     * own was stored as a nameless line without one. Same product, two lines,
+     * counted twice on the pedido and ordered twice from Oriflame. The rule is
+     * now shared; this re-splits what was written under the old one and folds
+     * the duplicates back together.
+     */
+    this.version(3).upgrade(async (tx) => {
+      const orders = await tx.table<Order>('orders').toArray()
+      const products = new Map<string, CampaignProduct>()
+
+      for (const order of orders) {
+        const repaired = mergeDuplicates(order.items.map(reSplit))
+        for (const item of repaired) {
+          if (!item.code) continue
+          const id = `${order.campaignId}:${item.code}`
+          if (!products.has(id)) {
+            products.set(id, { id, campaignId: order.campaignId, code: item.code, name: item.name })
+          }
+        }
+        if (sameItems(order.items, repaired)) continue
+        await tx.table('orders').put({ ...order, items: repaired })
+      }
+
+      for (const [id, product] of products) {
+        const known = await tx.table('campaignProducts').get(id)
+        if (!known) await tx.table('campaignProducts').put(product)
+      }
+    })
   }
+}
+
+/** Runs the current code rule over a line that was written under an older one. */
+function reSplit(item: OrderItem): OrderItem {
+  if (item.code) return item
+  const split = splitProductCode(item.name)
+  if (!split.code) return item
+  return { ...item, code: split.code, name: split.name }
+}
+
+/**
+ * One line per product. The quantities add up; a real price beats an absent
+ * one, and a real name beats a code standing in for itself.
+ */
+function mergeDuplicates(items: readonly OrderItem[]): OrderItem[] {
+  const merged: OrderItem[] = []
+  for (const item of items) {
+    const key = productKey(item)
+    const existing = merged.find((candidate) => productKey(candidate) === key)
+    if (!existing) {
+      merged.push({ ...item })
+      continue
+    }
+    existing.quantity += item.quantity
+    if (existing.price === undefined && item.price !== undefined) existing.price = item.price
+    if (existing.name === existing.code && item.name !== item.code) existing.name = item.name
+  }
+  return merged
+}
+
+function sameItems(before: readonly OrderItem[], after: readonly OrderItem[]): boolean {
+  if (before.length !== after.length) return false
+  return before.every((item, index) => {
+    const other = after[index]
+    return (
+      other !== undefined &&
+      item.code === other.code &&
+      item.name === other.name &&
+      item.quantity === other.quantity &&
+      item.price === other.price
+    )
+  })
 }
 
 type MigratedItem = { code?: string; name: string; quantity: number; price?: number }

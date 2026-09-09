@@ -18,7 +18,7 @@ const errors = []
 page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`))
 page.on('console', (m) => m.type() === 'error' && errors.push(`CONSOLE: ${m.text()}`))
 
-await page.goto('http://localhost:5174/', { waitUntil: 'networkidle' })
+await page.goto('http://localhost:5173/', { waitUntil: 'networkidle' })
 await page.waitForTimeout(800)
 
 // Sembrar por IndexedDB: la app ya creó la base con su esquema.
@@ -88,6 +88,11 @@ await page.waitForTimeout(600)
 await page.getByText('@maria23', { exact: true }).first().click()
 await page.waitForTimeout(700)
 await shot('04-pedido'); await dump('PEDIDO')
+// El detalle usa el mismo escritor de renglones que "Agregar pedido".
+await page.getByLabel('Producto').fill('31234 ')
+await page.getByLabel('Anotar el renglón').click()
+await page.waitForTimeout(700)
+await shot('04b-pedido-agrega'); await dump('PEDIDO + RENGLÓN')
 await page.goBack()
 await page.waitForTimeout(500)
 
@@ -103,6 +108,16 @@ await page.getByLabel('Precio').fill('6.50')
 await page.getByLabel('Anotar el renglón').click()
 await page.waitForTimeout(700)
 await shot('06-codigo-solo'); await dump('CÓDIGO SIN NOMBRE')
+
+// El mismo código escrito de las dos formas tiene que caer en un solo renglón.
+await page.getByLabel('Producto').fill('7898 Bálsamo')
+await page.getByLabel('Precio').fill('45')
+await page.getByLabel('Anotar el renglón').click()
+await page.waitForTimeout(500)
+await page.getByLabel('Producto').fill('7898')
+await page.getByLabel('Anotar el renglón').click()
+await page.waitForTimeout(700)
+await shot('07-mismo-codigo'); await dump('MISMO CÓDIGO DOS VECES')
 
 // Volver deja a Pedidos con el total ya movido.
 await page.getByLabel('Volver').click()

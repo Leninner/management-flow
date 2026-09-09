@@ -22,8 +22,24 @@ export function digitsOf(value: string): string {
   return value.replace(NON_DIGIT, '')
 }
 
-/** Oriflame codes are five or six digits and lead the line she types. */
-const LEADING_CODE = /^(\d{5,6})\b[\s.,;:-]*(.*)$/s
+/**
+ * What an Oriflame code looks like, defined once.
+ *
+ * Every place that recognises a code has to use this exact rule. It used to
+ * live twice -- five-to-six digits here, four-to-six in the field she types
+ * into -- so "7898 Bálsamo" was stored with a code and "7898" on its own was
+ * stored as a nameless line without one. Two lines, same product, no way to
+ * merge them, and a total that quietly counted it twice.
+ */
+const CODE = String.raw`\d{4,6}`
+
+const LEADING_CODE = new RegExp(String.raw`^(${CODE})\b[\s.,;:-]*(.*)$`, 's')
+
+/**
+ * The code has been typed and closed with a space, which is the moment it stops
+ * being loose text and becomes a code of its own.
+ */
+export const CODE_THEN_SPACE = new RegExp(String.raw`^(${CODE})\s+(.*)$`)
 
 export interface SplitProduct {
   /** Absent when the text does not start with something shaped like a code. */

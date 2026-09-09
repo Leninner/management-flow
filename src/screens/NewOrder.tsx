@@ -20,24 +20,17 @@
  */
 import { useLiveQuery } from 'dexie-react-hooks'
 import { UserPlus } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { campaignProducts, campaigns, customers as customerRepo, orders } from '../data'
-import type { CampaignProduct, Customer, Order } from '../db/types'
+import { useMemo, useState } from 'react'
+import { campaigns, customers as customerRepo, orders } from '../data'
+import type { Customer, Order } from '../db/types'
 import { fromCents, missingPriceCount, orderSubtotalCents } from '../domain'
-import { cx, useActionSlot } from '../ui'
-import { Composer, type ComposedLine } from './newOrder/Composer'
+import { cx } from '../ui'
+import { AddLine, useCatalogue } from './orders/AddLine'
+import { InvoiceLines, InvoiceSheet, InvoiceTotals } from './orders/Invoice'
 import { PersonSheet } from './newOrder/PersonSheet'
-import { InvoiceLines, InvoiceSheet, InvoiceTotals, ProductLabel } from './orders/Invoice'
 
 /** How many names fit on the strip without it turning into a directory. */
 const RECENT = 8
-
-interface Catalogue {
-  code: string
-  name: string
-  price?: number
-}
 
 export function NewOrder() {
   const [pickedId, setPickedId] = useState<string | null>(null)
@@ -46,12 +39,8 @@ export function NewOrder() {
 
   const data = useLiveQuery(async () => {
     const campaign = await campaigns.getActive()
-    const [orderList, customerList, products] = await Promise.all([
-      orders.listAll(),
-      customerRepo.list(),
-      campaign ? campaignProducts.listByCampaign(campaign.id) : Promise.resolve([]),
-    ])
-    return { campaign, orderList, customerList, products }
+    const [orderList, customerList] = await Promise.all([orders.listAll(), customerRepo.list()])
+    return { campaign, orderList, customerList }
   }, [])
 
   const orderList = data?.orderList
@@ -77,39 +66,8 @@ export function NewOrder() {
     return list
   }, [orderList, customerList])
 
-  /**
-   * This campaign's prices win, and anything only the history knows comes in
-   * without one: prices change between catalogues, so last month's number is a
-   * suggestion to confirm rather than a value to fill in.
-   */
-  const catalogue = useMemo<Catalogue[]>(() => {
-    const byCode = new Map<string, Catalogue>()
-    for (const order of orderList ?? []) {
-      for (const item of order.items) {
-        if (!item.code || byCode.has(item.code)) continue
-        byCode.set(item.code, { code: item.code, name: item.name })
-      }
-    }
-    for (const product of (data?.products ?? []) as CampaignProduct[]) {
-      byCode.set(product.code, {
-        code: product.code,
-        name: product.name,
-        ...(product.price === undefined ? {} : { price: product.price }),
-      })
-    }
-    return [...byCode.values()]
-  }, [orderList, data?.products])
-
-  const slot = useActionSlot()
-  /**
-   * Claiming the shell's action slot is not bookkeeping: unclaimed, the slot
-   * keeps `pointer-events-none` so nothing portalled into it can be tapped at
-   * all. The composer looked perfectly normal and did nothing. Claiming it also
-   * reserves the room so the sheet never ends up behind the composer.
-   */
-  useEffect(() => slot?.claim(), [slot])
-
   const campaign = data?.campaign
+  const catalogue = useCatalogue(campaign?.id ?? '')
 
   if (!data) return null
   if (!campaign) return null
@@ -129,15 +87,6 @@ export function NewOrder() {
   const items = open?.items ?? []
   const missing = missingPriceCount({ items })
 
-  async function write(line: ComposedLine) {
-    if (!picked) return
-    await orders.addItem({
-      campaignId: active.id,
-      customerId: picked.id,
-      item: { ...(line.code ? { code: line.code } : {}), name: line.name, ...(line.price === undefined ? {} : { price: line.price }) },
-    })
-  }
-
   async function drop(index: number) {
     if (!open) return
     const left = await orders.removeItem(open.id, index)
@@ -145,38 +94,6 @@ export function NewOrder() {
     // screen. A cancelled one gets deleted.
     if (left.items.length === 0 && left.paidAmount === 0) await orders.remove(open.id)
   }
-
-  const suggestions = suggest(catalogue, draft)
-
-  const composer = (
-    <div className="flex flex-col gap-2.5">
-      {suggestions.length > 0 && (
-        <div className="overflow-hidden rounded-card bg-card shadow-sheet">
-          {suggestions.map((hit) => (
-            <button
-              key={hit.code}
-              type="button"
-              onClick={() => void write(hit)}
-              className="flex h-[3.375rem] w-full items-center justify-between gap-3 border-b border-line px-[1.125rem] text-left last:border-b-0 active:bg-brand-soft"
-            >
-              <span className="min-w-0 truncate">
-                <ProductLabel item={hit} />
-              </span>
-              <span className="money shrink-0 text-[0.9375rem] text-muted tabular-nums">
-                {hit.price === undefined ? 'sin precio' : `$${hit.price.toFixed(2)}`}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-      <Composer
-        priceFor={(code) => catalogue.find((entry) => entry.code === code)?.price}
-        onChange={setDraft}
-        onSubmit={(line) => void write(line)}
-        fallbackName={suggestions[0]?.name}
-      />
-    </div>
-  )
 
   return (
     <>
@@ -221,7 +138,15 @@ export function NewOrder() {
         </InvoiceSheet>
       )}
 
-      {picked && slot?.node && createPortal(composer, slot.node)}
+      {picked && (
+        <AddLine
+          campaignId={active.id}
+          customerId={picked.id}
+          catalogue={catalogue}
+          draft={draft}
+          onDraft={setDraft}
+        />
+      )}
 
       <PersonSheet
         open={picking}
@@ -242,25 +167,5 @@ function firstName(name: string): string {
 
 function plural(count: number): string {
   return count === 1 ? 'Falta 1 precio' : `Faltan ${count} precios`
-}
-
-/**
- * With a code in hand there is exactly one product it can be, so the list
- * collapses to it. Without one it is an ordinary search over what she has sold.
- */
-function suggest(catalogue: readonly Catalogue[], draft: { code?: string; name: string }): Catalogue[] {
-  const typed = draft.name.trim()
-  if (draft.code !== undefined) {
-    const known = catalogue.find((entry) => entry.code === draft.code)
-    if (typed !== '') {
-      return [{ code: draft.code, name: typed, ...(known?.price === undefined ? {} : { price: known.price }) }]
-    }
-    return known ? [known] : []
-  }
-  if (typed === '') return []
-  const needle = typed.toLowerCase()
-  return catalogue
-    .filter((entry) => `${entry.code} ${entry.name}`.toLowerCase().includes(needle))
-    .slice(0, 3)
 }
 

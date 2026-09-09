@@ -24,15 +24,14 @@ import {
   MoreMenu,
   useNavigation,
 } from '../ui'
-import { AddItemSheet } from './orders/AddItemSheet'
+import { AddLine, useCatalogue } from './orders/AddLine'
 import { InvoiceLines, InvoiceSheet, InvoiceTotals } from './orders/Invoice'
-import { itemHistory } from './orders/items'
 import { orderStatus } from './orders/filters'
 import { PaymentSheet } from './orders/PaymentSheet'
 import { PriceSheet } from './orders/PriceSheet'
 import { ShippingSheet } from './orders/ShippingSheet'
 
-type OpenSheet = 'payment' | 'shipping' | 'addItem' | 'price' | 'delete' | null
+type OpenSheet = 'payment' | 'shipping' | 'price' | 'delete' | null
 
 export interface OrderDetailProps {
   orderId: string
@@ -42,23 +41,27 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
   const { push, back } = useNavigation()
   const [sheet, setSheet] = useState<OpenSheet>(null)
   const [priceKey, setPriceKey] = useState('')
+  const [draft, setDraft] = useState<{ code?: string; name: string }>({ name: '' })
 
   const data = useLiveQuery(async () => {
     const found = await orderRepo.get(orderId)
     // null, not undefined: undefined is what the hook returns while loading.
     if (!found) return null
-    const [customer, campaign, all] = await Promise.all([
+    const [customer, campaign] = await Promise.all([
       customerRepo.get(found.customerId),
       campaignRepo.get(found.campaignId),
-      orderRepo.listAll(),
     ])
-    return { order: found, customer, campaign, history: itemHistory(all) }
+    return { order: found, customer, campaign }
   }, [orderId])
+
+  // Hooks run before the early returns below, so this one takes an empty id
+  // while the pedido is still loading rather than being called conditionally.
+  const catalogue = useCatalogue(data?.order.campaignId ?? '')
 
   if (data === undefined) return null
   if (data === null) return <EmptyState icon={PackageX} line="Ese pedido ya no está" />
 
-  const { order, customer, campaign, history } = data
+  const { order, customer, campaign } = data
   const balance = orderBalance(order)
   const paid = order.paidAmount
   const missing = missingPriceCount(order)
@@ -124,7 +127,6 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
         )}
 
         <Card padded={false}>
-          <ActionRow label="Agregar producto" accent onClick={() => setSheet('addItem')} />
           <ActionRow
             label="Envío"
             value={order.shippingCost > 0 ? formatMoney(order.shippingCost) : 'En Ambato'}
@@ -155,17 +157,14 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
         onSave={(cost) => void orderRepo.setShippingCost(order.id, cost)}
       />
 
-      <AddItemSheet
-        open={sheet === 'addItem'}
-        onClose={() => setSheet(null)}
-        history={history}
-        onAdd={(item) =>
-          void orderRepo.addItem({
-            campaignId: order.campaignId,
-            customerId: order.customerId,
-            item,
-          })
-        }
+      {/* The same one line-writer as the pedido she is writing during a live:
+          one act, one interface, and both of them know what a code is. */}
+      <AddLine
+        campaignId={order.campaignId}
+        customerId={order.customerId}
+        catalogue={catalogue}
+        draft={draft}
+        onDraft={setDraft}
       />
 
       <PriceSheet

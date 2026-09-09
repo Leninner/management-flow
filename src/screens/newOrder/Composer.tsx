@@ -15,7 +15,7 @@
  */
 import { Plus } from 'lucide-react'
 import { useState, type KeyboardEvent } from 'react'
-import { splitProductCode } from '../../domain'
+import { CODE_THEN_SPACE, splitProductCode } from '../../domain'
 import { cx, parseAmount, sanitizeAmount } from '../../ui'
 
 export interface ComposedLine {
@@ -32,9 +32,6 @@ export interface ComposerProps {
   /** The suggestion a bare code resolves to, so Enter can take it. */
   fallbackName?: string
 }
-
-/** Five or six digits is an Oriflame code; four is allowed for the odd short one. */
-const CODE_THEN_SPACE = /^(\d{4,6})\s+(.*)$/
 
 export function Composer({ priceFor, onChange, onSubmit, fallbackName }: ComposerProps) {
   const [code, setCode] = useState<string | null>(null)

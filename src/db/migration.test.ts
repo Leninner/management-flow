@@ -37,6 +37,10 @@ async function seedVersionOne(): Promise<void> {
         { name: '38588 Novage Ecollagen', quantity: 2, price: 12.9 },
         // Zero was v1's way of saying "no price yet", never a free product.
         { name: 'Muestra de perfume', quantity: 1, price: 0 },
+        // The four-digit code the old rule refused to recognise, written both
+        // ways: once with its name and once on its own.
+        { name: '7898 Bálsamo', quantity: 1, price: 45 },
+        { name: '7898', quantity: 1, price: 0 },
       ],
       paidAmount: 0,
       shippingCost: 0,
@@ -82,9 +86,21 @@ describe('the v1 to v2 upgrade', () => {
     await seedVersionOne()
     const upgraded = await openVersionTwo()
     const order = (await upgraded.orders.get('ord-1')) as Order
-    expect(order.items).toEqual([
+    expect(order.items.slice(0, 2)).toEqual([
       { code: '38588', name: 'Novage Ecollagen', quantity: 2, price: 12.9 },
       { name: 'Muestra de perfume', quantity: 1 },
+    ])
+    upgraded.close()
+  })
+
+  it('folds a code written both ways back into one line', async () => {
+    await seedVersionOne()
+    const upgraded = await openVersionTwo()
+    const order = (await upgraded.orders.get('ord-1')) as Order
+    // Two units of one product, the name kept over the code standing in for
+    // itself and the real price kept over the absent one.
+    expect(order.items.filter((item) => item.code === '7898')).toEqual([
+      { code: '7898', name: 'Bálsamo', quantity: 2, price: 45 },
     ])
     upgraded.close()
   })
@@ -109,6 +125,7 @@ describe('the v1 to v2 upgrade', () => {
         name: 'Novage Ecollagen',
         price: 12.9,
       },
+      { id: 'camp-13:7898', campaignId: 'camp-13', code: '7898', name: 'Bálsamo', price: 45 },
     ])
     upgraded.close()
   })

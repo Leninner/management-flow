@@ -61,6 +61,24 @@ describe('addItem', () => {
     expect(order.items[0]).toEqual({ code: '38588', name: '38588', quantity: 1 })
   })
 
+  it('merges a code typed with a name and the same code typed bare', async () => {
+    // The regression that made this a rule: the field she types into and the
+    // parser disagreed on how long a code is, so one of the two spellings lost
+    // its code and the same product sat on the pedido twice.
+    await orders.addItem({
+      campaignId: CAMPAIGN,
+      customerId: CUSTOMER,
+      item: { name: '7898 Bálsamo', price: 45 },
+    })
+    const order = await orders.addItem({
+      campaignId: CAMPAIGN,
+      customerId: CUSTOMER,
+      item: { name: '7898' },
+    })
+
+    expect(order.items).toEqual([{ code: '7898', name: 'Bálsamo', quantity: 2, price: 45 }])
+  })
+
   it('rejects an item with neither a code nor a name', async () => {
     await expect(
       orders.addItem({ campaignId: CAMPAIGN, customerId: CUSTOMER, item: { name: '   ' } }),
