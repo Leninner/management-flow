@@ -10,6 +10,11 @@ import type { PastItem } from '../../domain'
 /** The catalogue builds itself: every line ever sold is a product to suggest. */
 export function itemHistory(all: readonly Order[]): PastItem[] {
   return all.flatMap((order) =>
-    order.items.map((item) => ({ name: item.name, price: item.price, usedAt: order.createdAt })),
+    order.items.map((item) => ({
+      ...(item.code ? { code: item.code } : {}),
+      name: item.name,
+      ...(item.price === undefined ? {} : { price: item.price }),
+      usedAt: order.createdAt,
+    })),
   )
 }

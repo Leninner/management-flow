@@ -1,59 +1,36 @@
 /**
- * El pedido por dentro. This is where an order gets settled: the balance at
- * the top in the colour of its state, the items she can fix when Oriflame
- * ships short, one tap to say it was paid in full, and one tap to say it went
- * out. Nothing here is a total she typed: every number is derived from the
- * items, the shipping and what was paid.
+ * El pedido por dentro: the same sheet she wrote during the live, now closed.
+ *
+ * Total, abonado and saldo sit at the foot behind an ink rule. Nothing here is
+ * a number she typed — every one of them is derived from the lines, the
+ * shipping and what came in.
+ *
+ * "Ya me pagó" lives beside the saldo rather than as a hero button at the
+ * bottom: it is the only thing that moves that number, and under the thumb on
+ * a screen she opens to read it was the loudest thing there and got pressed by
+ * accident.
  */
 import { useLiveQuery } from 'dexie-react-hooks'
-import {
-  Check,
-  DollarSign,
-  MessageCircle,
-  PackageX,
-  Plus,
-  RotateCcw,
-  Trash2,
-  Truck,
-} from 'lucide-react'
+import { DollarSign, PackageX, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { campaigns as campaignRepo, customers as customerRepo, orders as orderRepo } from '../data'
+import { fromCents, missingPriceCount, orderBalance, orderSubtotalCents, productKey, toCents } from '../domain'
 import {
-  campaigns as campaignRepo,
-  customers as customerRepo,
-  orders as orderRepo,
-  settings as settingsRepo,
-} from '../data'
-import { TEMPLATE_LABEL } from '../content/templates'
-import { whatsappUrl } from '../content/whatsapp'
-import { orderBalance, orderTotal, toCents } from '../domain'
-import {
-  BigButton,
   Card,
   ConfirmSheet,
   EmptyState,
   formatMoney,
   HeaderAction,
-  Money,
   MoreMenu,
-  Row,
-  SectionHeader,
   useNavigation,
 } from '../ui'
 import { AddItemSheet } from './orders/AddItemSheet'
-import { orderStatus } from './orders/filters'
-import { todayIso } from './orders/format'
-import { ItemList } from './orders/ItemList'
+import { InvoiceLines, InvoiceSheet, InvoiceTotals } from './orders/Invoice'
 import { itemHistory } from './orders/items'
+import { orderStatus } from './orders/filters'
 import { PaymentSheet } from './orders/PaymentSheet'
 import { PriceSheet } from './orders/PriceSheet'
 import { ShippingSheet } from './orders/ShippingSheet'
-import { OrderSteps, type OrderStep } from './orders/OrderSteps'
-import {
-  bankAccountFrom,
-  orderMessage,
-  templateForOrder,
-  templatesFrom,
-} from './orders/whatsapp'
 
 type OpenSheet = 'payment' | 'shipping' | 'addItem' | 'price' | 'delete' | null
 
@@ -64,205 +41,110 @@ export interface OrderDetailProps {
 export function OrderDetail({ orderId }: OrderDetailProps) {
   const { push, back } = useNavigation()
   const [sheet, setSheet] = useState<OpenSheet>(null)
-  const [priceName, setPriceName] = useState('')
+  const [priceKey, setPriceKey] = useState('')
 
   const data = useLiveQuery(async () => {
     const found = await orderRepo.get(orderId)
     // null, not undefined: undefined is what the hook returns while loading.
     if (!found) return null
-    const [customer, campaign, all, stored] = await Promise.all([
+    const [customer, campaign, all] = await Promise.all([
       customerRepo.get(found.customerId),
       campaignRepo.get(found.campaignId),
       orderRepo.listAll(),
-      settingsRepo.all(),
     ])
-    return { order: found, customer, campaign, history: itemHistory(all), stored }
+    return { order: found, customer, campaign, history: itemHistory(all) }
   }, [orderId])
 
   if (data === undefined) return null
   if (data === null) return <EmptyState icon={PackageX} line="Ese pedido ya no está" />
 
-  const { order, customer, campaign, history, stored } = data
+  const { order, customer, campaign, history } = data
   const balance = orderBalance(order)
-  const total = orderTotal(order)
   const paid = order.paidAmount
-  const priceItem = order.items.find((item) => item.name === priceName)
-
-  async function pay(amount: number) {
-    await orderRepo.recordPayment(order.id, amount)
-    // Money in the hand is a confirmed order, whatever the flag said before.
-    if (!order.confirmed) await orderRepo.markConfirmed(order.id)
-  }
-
-  // A real link, never window.open: with a features string the browser reads
-  // it as a pop-up and an installed PWA drops it without saying anything.
-  const whatsappHref = whatsappUrl(
-    customer?.whatsapp,
-    orderMessage({
-      order,
-      customer,
-      campaign,
-      templates: templatesFrom(stored),
-      bankAccount: bankAccountFrom(stored),
-      today: todayIso(),
-    }),
-  )
+  const missing = missingPriceCount(order)
+  const priceItem = order.items.find((item) => productKey(item) === priceKey)
 
   async function removeOrder() {
     await orderRepo.remove(order.id)
     back()
   }
 
-  const settled = toCents(balance) <= 0
-  const steps: OrderStep[] = [
-    { label: 'Confirmado', done: order.confirmed, icon: Check },
-    { label: 'Pagado', done: settled && toCents(total) > 0, icon: DollarSign },
-    { label: 'Entregado', done: order.deliveredAt !== undefined, icon: Truck },
-  ]
-
-  // The message this order is asking for, named on the button that sends it.
-  const messageLabel = TEMPLATE_LABEL[templateForOrder(order, campaign, todayIso())]
+  const settled = toCents(balance) <= 0 && missing === 0
 
   return (
     <>
       <HeaderAction>
         <MoreMenu
           items={[
-            ...(order.confirmed
-              ? [
-                  {
-                    label: 'Desmarcar confirmado',
-                    icon: RotateCcw,
-                    onSelect: () => void orderRepo.markConfirmed(order.id, false),
-                  },
-                ]
-              : []),
             ...(toCents(paid) > 0
-              ? [
-                  {
-                    label: 'Corregir el abono',
-                    icon: DollarSign,
-                    onSelect: () => setSheet('payment'),
-                  },
-                ]
+              ? [{ label: 'Corregir el abono', icon: DollarSign, onSelect: () => setSheet('payment') }]
               : []),
-            {
-              label: 'Borrar el pedido',
-              icon: Trash2,
-              onSelect: () => setSheet('delete'),
-              danger: true,
-            },
+            { label: 'Borrar el pedido', icon: Trash2, onSelect: () => setSheet('delete'), danger: true },
           ]}
         />
       </HeaderAction>
 
-      <div className="flex flex-col gap-2 pt-4">
-        <Row
-          status={orderStatus(order)}
-          title={customer?.name ?? 'Sin nombre'}
-          subtitle={[campaign?.name, customer?.whatsapp].filter(Boolean).join(' · ')}
-          onClick={
-            customer ? () => push({ kind: 'customerDetail', customerId: customer.id }) : undefined
-          }
-        />
+      <div className="flex flex-col gap-3 pt-1">
+        <InvoiceSheet title={customer?.name ?? 'Sin nombre'} subtitle={campaign?.name}>
+          <InvoiceLines
+            items={order.items}
+            onPriceClick={(item) => {
+              setPriceKey(productKey(item))
+              setSheet('price')
+            }}
+            onRemove={(index) => void orderRepo.removeItem(order.id, index)}
+          />
+          <InvoiceTotals
+            rows={
+              order.shippingCost > 0 || toCents(paid) > 0
+                ? [
+                    { label: 'Productos', value: fromCents(orderSubtotalCents(order)) },
+                    ...(order.shippingCost > 0 ? [{ label: 'Envío', value: order.shippingCost }] : []),
+                    ...(toCents(paid) > 0 ? [{ label: 'Abonado', value: paid }] : []),
+                  ]
+                : undefined
+            }
+            label="Saldo"
+            value={balance}
+            tone={orderStatus(order)}
+            note={missing > 0 ? (missing === 1 ? 'Falta 1 precio' : `Faltan ${missing} precios`) : undefined}
+          />
+        </InvoiceSheet>
 
-        {/*
-          La plata y el estado en una sola tarjeta. Los pasos vivían en una
-          tarjeta aparte de 115px para reportar tres booleanos, y con eso los
-          productos empezaban recién debajo del borde de la pantalla.
-        */}
-        <Card padded={false}>
-          <div className="flex flex-col gap-2 px-4 pt-4 pb-3">
-            <span className="text-[0.9375rem] font-semibold text-muted">Saldo</span>
-            <Money value={balance} size="xl" tone={toCents(balance) > 0 ? 'owes' : 'done'} />
-            {/* With nothing paid in, Total is the same number as Saldo above. */}
-            {toCents(paid) > 0 && (
-              <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
-                <Labeled label="Total" value={total} />
-                <Labeled label="Abonado" value={paid} />
-              </div>
-            )}
-            {/*
-              Sólo cuando falta plata. Corregir un abono ya cerrado es una
-              recuperación, no algo de todos los días: vive en el menú.
-            */}
-            {toCents(balance) > 0 && (
-              <BigButton
-                floating={false}
-                variant="quiet"
-                className="mt-1"
-                onClick={() => setSheet('payment')}
-              >
-                Abonó una parte
-              </BigButton>
-            )}
+        {!settled && (
+          <div className="px-0.5 py-1">
+            <button
+              type="button"
+              onClick={() => setSheet('payment')}
+              className="inline-flex h-12 items-center rounded-full bg-card px-[1.375rem] text-[1.0625rem] font-semibold shadow-sheet active:bg-brand-soft"
+            >
+              Ya me pagó
+            </button>
           </div>
+        )}
 
-          <OrderSteps steps={steps} />
+        <Card padded={false}>
+          <ActionRow label="Agregar producto" accent onClick={() => setSheet('addItem')} />
+          <ActionRow
+            label="Envío"
+            value={order.shippingCost > 0 ? formatMoney(order.shippingCost) : 'En Ambato'}
+            onClick={() => setSheet('shipping')}
+          />
+          {customer && (
+            <ActionRow
+              label="Ficha de la clienta"
+              onClick={() => push({ kind: 'customerDetail', customerId: customer.id })}
+            />
+          )}
         </Card>
-
-        <BigButton
-          floating={false}
-          variant="quiet"
-          icon={MessageCircle}
-          href={whatsappHref}
-          onClick={() => void orderRepo.recordContact(order.id)}
-        >
-          {messageLabel}
-        </BigButton>
       </div>
-
-      <SectionHeader title="Productos" count={order.items.length} />
-      <div className="flex flex-col gap-2">
-        <ItemList
-          items={order.items}
-          shipping={order.shippingCost}
-          onQuantityChange={(index, quantity) => {
-            const item = order.items[index]
-            if (item) void orderRepo.setItemQuantity(order.id, item.name, quantity)
-          }}
-          onPriceClick={(item) => {
-            setPriceName(item.name)
-            setSheet('price')
-          }}
-          onRemove={(index) => void orderRepo.removeItem(order.id, index)}
-        />
-
-        <Row icon={Plus} title="Agregar producto" onClick={() => setSheet('addItem')} />
-
-        <Row
-          icon={Truck}
-          title="Envío"
-          subtitle={order.shippingCost > 0 ? formatMoney(order.shippingCost) : 'En Ambato'}
-          onClick={() => setSheet('shipping')}
-        />
-      </div>
-
-      {/*
-        One next step, and it is the one the pedido is actually on. This used
-        to say "Pagó todo" whenever there was a balance, so an order nobody had
-        even confirmed offered marking it paid in full as its loudest action.
-      */}
-      {!order.confirmed ? (
-        <BigButton icon={Check} onClick={() => void orderRepo.markConfirmed(order.id)}>
-          Confirmar pedido
-        </BigButton>
-      ) : toCents(balance) > 0 ? (
-        <BigButton icon={Check} onClick={() => void pay(balance)}>
-          Pagó todo
-        </BigButton>
-      ) : !order.deliveredAt ? (
-        <BigButton icon={Truck} onClick={() => void orderRepo.markDelivered(order.id)}>
-          Entregado
-        </BigButton>
-      ) : null}
 
       <PaymentSheet
         open={sheet === 'payment'}
         onClose={() => setSheet(null)}
         balance={balance}
         paid={paid}
-        onPay={(amount) => void pay(amount)}
+        onPay={(amount) => void orderRepo.recordPayment(order.id, amount)}
         onClear={() => void orderRepo.recordPayment(order.id, -paid)}
       />
 
@@ -289,34 +171,43 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
       <PriceSheet
         open={sheet === 'price'}
         onClose={() => setSheet(null)}
-        name={priceItem?.name ?? ''}
-        price={priceItem?.price ?? 0}
-        onSave={(price) => void orderRepo.setItemPrice(order.id, priceName, price)}
+        name={priceItem ? [priceItem.code, priceItem.name].filter(Boolean).join(' ') : ''}
+        price={priceItem?.price}
+        onSave={(price) => void orderRepo.setItemPrice(order.id, priceKey, price)}
       />
 
       <ConfirmSheet
         open={sheet === 'delete'}
         onClose={() => setSheet(null)}
         title="¿Borrar el pedido?"
-        confirmLabel="Sí, borrar"
+        confirmLabel="Borrar"
         onConfirm={() => void removeOrder()}
-      >
-        <Row
-          status={orderStatus(order)}
-          title={customer?.name ?? 'Sin nombre'}
-          subtitle={`${order.items.length} productos`}
-          amount={total}
-        />
-      </ConfirmSheet>
+      />
     </>
   )
 }
 
-function Labeled({ label, value }: { label: string; value: number }) {
+function ActionRow({
+  label,
+  value,
+  accent,
+  onClick,
+}: {
+  label: string
+  value?: string
+  accent?: boolean
+  onClick: () => void
+}) {
   return (
-    <span className="flex items-baseline gap-1.5">
-      <span className="text-[0.9375rem] text-muted">{label}</span>
-      <Money value={value} size="md" />
-    </span>
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-h-[3.75rem] w-full items-center gap-3 border-b border-line px-[1.125rem] py-2.5 text-left last:border-b-0 active:bg-brand-soft"
+    >
+      <span className={accent ? 'flex-1 font-semibold text-brand' : 'flex-1 font-medium'}>
+        {label}
+      </span>
+      {value && <span className="shrink-0 text-[0.9375rem] text-muted">{value}</span>}
+    </button>
   )
 }

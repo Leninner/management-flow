@@ -18,13 +18,19 @@ async function seed() {
     id: 'ord-1',
     campaignId: 'camp-13',
     customerId: 'cus-1',
-    items: [{ name: '38588 Novage', quantity: 2, price: 12.9 }],
+    items: [{ code: '38588', name: 'Novage', quantity: 2, price: 12.9 }],
     paidAmount: 5,
     shippingCost: 0,
-    confirmed: true,
     contacts: ['2026-09-03T00:00:00.000Z'],
     createdAt: '2026-09-01T00:00:00.000Z',
     notes: 'retira en Ambato',
+  })
+  await db.campaignProducts.put({
+    id: 'camp-13:38588',
+    campaignId: 'camp-13',
+    code: '38588',
+    name: 'Novage',
+    price: 12.9,
   })
   await db.settings.put({ key: 'bank.account', value: 'Pichincha 22012345' })
 }
@@ -36,17 +42,25 @@ describe('exportBackup', () => {
     await seed()
     const backup = await exportBackup()
 
-    expect(backup.version).toBe(1)
+    expect(backup.version).toBe(2)
     expect(backup.exportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
     expect(backup.campaigns).toHaveLength(2)
     expect(backup.customers).toHaveLength(1)
     expect(backup.orders).toHaveLength(1)
+    expect(backup.campaignProducts).toHaveLength(1)
     expect(backup.settings).toEqual([{ key: 'bank.account', value: 'Pichincha 22012345' }])
   })
 
   it('exports an empty file on a fresh install', async () => {
     const backup = await exportBackup()
-    expect(backup).toMatchObject({ version: 1, campaigns: [], customers: [], orders: [], settings: [] })
+    expect(backup).toMatchObject({
+      version: 2,
+      campaigns: [],
+      customers: [],
+      orders: [],
+      campaignProducts: [],
+      settings: [],
+    })
   })
 })
 
@@ -65,6 +79,7 @@ describe('the round trip', () => {
     expect(after.campaigns).toEqual(before.campaigns)
     expect(after.customers).toEqual(before.customers)
     expect(after.orders).toEqual(before.orders)
+    expect(after.campaignProducts).toEqual(before.campaignProducts)
     expect(after.settings).toEqual(before.settings)
   })
 
@@ -89,7 +104,7 @@ describe('a malformed file', () => {
   })
 
   it('rejects an unknown version', async () => {
-    await expect(importBackup({ version: 2, campaigns: [], customers: [], orders: [], settings: [] })).rejects.toThrow(
+    await expect(importBackup({ version: 3, campaigns: [], customers: [], orders: [], settings: [] })).rejects.toThrow(
       BackupFormatError,
     )
   })
@@ -143,5 +158,48 @@ describe('the customer contact log', () => {
     }
     await importBackup(legacy)
     await expect(db.customers.get('cus-1')).resolves.toMatchObject({ name: 'Ana', contacts: [] })
+  })
+})
+
+describe('a backup written before codes were split out', () => {
+  it('pulls the code out of the name, drops the confirmation and rebuilds the catalogue', async () => {
+    const legacy = {
+      version: 1,
+      exportedAt: '2026-09-01T00:00:00.000Z',
+      campaigns: [{ id: 'camp-13', name: 'C13-2026', cutoffDate: '2026-09-20', active: true }],
+      customers: [{ id: 'cus-1', name: 'Ana', aliases: [], contacts: [] }],
+      orders: [
+        {
+          id: 'ord-1',
+          campaignId: 'camp-13',
+          customerId: 'cus-1',
+          // A zero here meant "no price yet", never a free product.
+          items: [
+            { name: '38588 Novage Ecollagen', quantity: 2, price: 12.9 },
+            { name: 'Muestra', quantity: 1, price: 0 },
+          ],
+          paidAmount: 0,
+          shippingCost: 0,
+          confirmed: false,
+          contacts: [],
+          createdAt: '2026-09-01T00:00:00.000Z',
+        },
+      ],
+      settings: [],
+    }
+
+    await importBackup(legacy)
+
+    const order = await db.orders.get('ord-1')
+    expect(order?.items).toEqual([
+      { code: '38588', name: 'Novage Ecollagen', quantity: 2, price: 12.9 },
+      { name: 'Muestra', quantity: 1 },
+    ])
+    expect(order).not.toHaveProperty('confirmed')
+    await expect(db.campaignProducts.get('camp-13:38588')).resolves.toMatchObject({
+      code: '38588',
+      name: 'Novage Ecollagen',
+      price: 12.9,
+    })
   })
 })

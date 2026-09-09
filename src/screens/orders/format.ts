@@ -6,7 +6,7 @@
  * calendar day is pulled apart by hand and rebuilt in local time.
  */
 import type { Order } from '../../db/types'
-import { daysBetween, orderBalanceCents, toCents } from '../../domain'
+import { daysBetween, missingPriceCount, orderBalanceCents, toCents } from '../../domain'
 import { formatMoney } from '../../ui'
 
 const SHORT = new Intl.DateTimeFormat('es-EC', { day: 'numeric', month: 'short' })
@@ -53,7 +53,14 @@ export function daysAgoLabel(iso: string, today: string): string {
  * the row already said it; this is the backup for the same information.
  */
 export function orderStateLine(order: Order, today: string): string {
-  if (!order.confirmed) return `sin confirmar · ${daysAgoLabel(order.createdAt, today)}`
+  // A line with no price makes every number below it a guess, so it is said
+  // first and nothing else about the money is claimed.
+  const unpriced = missingPriceCount(order)
+  if (unpriced > 0) {
+    return unpriced === 1
+      ? `falta el precio de 1 producto · ${daysAgoLabel(order.createdAt, today)}`
+      : `faltan ${unpriced} precios · ${daysAgoLabel(order.createdAt, today)}`
+  }
   if (orderBalanceCents(order) > 0) {
     return toCents(order.paidAmount) > 0 ? `abonó ${formatMoney(order.paidAmount)}` : 'no ha pagado'
   }

@@ -36,7 +36,12 @@ export function templateForOrder(
   campaign: Campaign | undefined,
   today: string,
 ): TemplateKey {
-  if (!order.confirmed) return 'confirmation'
+  // The first message after the live, owed to anybody she has written down and
+  // not spoken to yet. It used to hang off a confirmation flag; nothing is
+  // confirmed any more, so it hangs off the silence.
+  if (order.contacts.length === 0 && orderBalanceCents(order) > 0 && !order.deliveredAt) {
+    return 'confirmation'
+  }
 
   if (orderBalanceCents(order) > 0) {
     const daysToCutoff = campaign ? daysBetween(today, campaign.cutoffDate) : undefined

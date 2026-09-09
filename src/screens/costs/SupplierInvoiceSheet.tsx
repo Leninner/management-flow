@@ -3,7 +3,7 @@ import { campaigns } from '../../data'
 import type { Campaign } from '../../db/types'
 import { BigButton, MoneyField, parseAmount, Sheet } from '../../ui'
 
-export interface InvoiceSheetProps {
+export interface SupplierInvoiceSheetProps {
   open: boolean
   onClose: () => void
   campaign: Campaign
@@ -15,7 +15,7 @@ export interface InvoiceSheetProps {
  * own sheet, reachable from the tile that is waiting for it, because asking
  * her to go find it under Más is asking her not to write it down.
  */
-export function InvoiceSheet({ open, onClose, campaign }: InvoiceSheetProps) {
+export function SupplierInvoiceSheet({ open, onClose, campaign }: SupplierInvoiceSheetProps) {
   const [amount, setAmount] = useState('')
   const [working, setWorking] = useState(false)
 

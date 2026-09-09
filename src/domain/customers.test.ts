@@ -87,7 +87,6 @@ describe('mergeCustomers', () => {
       items: [makeItem({ name: '38588 Novage', quantity: 2, price: 12.9 })],
       paidAmount: 5,
       shippingCost: 3,
-      confirmed: true,
       contacts: ['2026-09-03T00:00:00.000Z'],
       createdAt: '2026-09-02T00:00:00.000Z',
     })
@@ -101,7 +100,6 @@ describe('mergeCustomers', () => {
       ],
       paidAmount: 0.1,
       shippingCost: 2,
-      confirmed: false,
       contacts: ['2026-09-01T00:00:00.000Z'],
       createdAt: '2026-09-01T00:00:00.000Z',
     })
@@ -114,12 +112,11 @@ describe('mergeCustomers', () => {
     expect(merged.id).toBe('o-target')
     expect(merged.customerId).toBe('target')
     expect(merged.items).toEqual([
-      { name: '38588 Novage', quantity: 3, price: 12.9 },
-      { name: '42102 Labial', quantity: 4, price: 7 },
+      { code: '38588', name: 'Novage', quantity: 3, price: 12.9 },
+      { code: '42102', name: 'Labial', quantity: 4, price: 7 },
     ])
     expect(merged.paidAmount).toBe(5.1)
     expect(merged.shippingCost).toBe(5)
-    expect(merged.confirmed).toBe(true)
     expect(merged.contacts).toEqual(['2026-09-01T00:00:00.000Z', '2026-09-03T00:00:00.000Z'])
     expect(merged.createdAt).toBe('2026-09-01T00:00:00.000Z')
   })

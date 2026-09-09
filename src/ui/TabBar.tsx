@@ -1,11 +1,8 @@
-import { Home, Menu, Plus, ShoppingBag, Users, type LucideIcon } from 'lucide-react'
+import { Menu, Package, ShoppingBag, type LucideIcon } from 'lucide-react'
 import { cx } from './cx'
 import type { Screen } from './navigation'
 
 export const TAB_BAR_HEIGHT = 78
-
-/** Cuánto se levanta el botón de anotar por encima de la barra. */
-export const CAPTURE_OVERHANG = 26
 
 interface Tab {
   screen: Screen
@@ -13,65 +10,33 @@ interface Tab {
   icon: LucideIcon
 }
 
-/** Four destinations, no nested menus, split around the capture button. */
-const LEFT: readonly Tab[] = [
-  { screen: 'today', label: 'Hoy', icon: Home },
+/**
+ * Three destinations, no nested menus.
+ *
+ * Writing a pedido is not among them: it opens from Pedidos and closes again,
+ * because it is something she does rather than somewhere she is.
+ */
+const TABS: readonly Tab[] = [
   { screen: 'orders', label: 'Pedidos', icon: ShoppingBag },
-]
-
-const RIGHT: readonly Tab[] = [
-  { screen: 'customers', label: 'Clientes', icon: Users },
+  { screen: 'oriflame', label: 'Oriflame', icon: Package },
   { screen: 'more', label: 'Más', icon: Menu },
 ]
 
 export interface TabBarProps {
   screen: Screen
   onSelect: (screen: Screen) => void
-  /**
-   * The raised button in the middle. Capturing is the only thing she does
-   * under time pressure, so it sits under the thumb from every tab instead of
-   * living inside one of them.
-   */
-  onCapture?: () => void
   /** Red count over a tab icon. Used for the things waiting today. */
   badges?: Partial<Record<Screen, number>>
 }
 
-export function TabBar({ screen, onSelect, onCapture, badges }: TabBarProps) {
+export function TabBar({ screen, onSelect, badges }: TabBarProps) {
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <ul className="mx-auto flex max-w-lg items-start">
-        {LEFT.map((tab) => (
-          <TabButton
-            key={tab.screen}
-            tab={tab}
-            active={screen === tab.screen}
-            badge={badges?.[tab.screen]}
-            onSelect={onSelect}
-          />
-        ))}
-
-        {onCapture && (
-          <li className="flex w-20 shrink-0 justify-center">
-            <button
-              type="button"
-              onClick={onCapture}
-              aria-label="Anotar pedido"
-              className={cx(
-                '-mt-6 flex h-16 w-16 items-center justify-center rounded-full',
-                'bg-brand text-white shadow-lift transition-transform active:scale-95',
-                'motion-reduce:transition-none',
-              )}
-            >
-              <Plus size={32} strokeWidth={2.4} aria-hidden="true" />
-            </button>
-          </li>
-        )}
-
-        {RIGHT.map((tab) => (
+        {TABS.map((tab) => (
           <TabButton
             key={tab.screen}
             tab={tab}
@@ -119,7 +84,9 @@ function TabButton({
             </span>
           )}
         </span>
-        <span className={cx('text-[0.75rem]', active ? 'font-semibold' : 'font-medium')}>{label}</span>
+        <span className={cx('text-[0.75rem]', active ? 'font-semibold' : 'font-medium')}>
+          {label}
+        </span>
       </button>
     </li>
   )

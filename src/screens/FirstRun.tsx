@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { campaigns } from '../../data'
-import { BigButton, Card, TextField } from '../../ui'
+import { campaigns } from '../data'
+import { BigButton, Card, TextField } from '../ui'
 
 /**
  * Everything the app needs to exist: a name and a cutoff. Two fields and she

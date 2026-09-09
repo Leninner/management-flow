@@ -1,17 +1,21 @@
 /**
- * Opening a new campaign has to decide what happens to the orders she captured
- * in a live and nobody ever confirmed: they follow the customer into the new
- * catalog, or they go.
+ * Opening a new campaign has to decide what happens to the orders she wrote
+ * down in a live and that never went anywhere: they follow the customer into
+ * the new catalogue, or they go.
  *
- * Carrying them is `orders.moveUnconfirmed`. Throwing them away has no verb of
+ * "Never went anywhere" is nothing paid and nothing delivered. It used to be an
+ * unticked confirmation flag, which meant the answer depended on paperwork she
+ * had to keep up rather than on what had actually happened.
+ *
+ * Carrying them is `orders.moveOpenOrders`. Throwing them away has no verb of
  * its own because deleting an order is already one call; this only picks which
- * ones, and confirmed orders are never among them.
+ * ones, and an order somebody has paid for is never among them.
  */
 import { orders } from '../../data'
 
-export async function discardUnconfirmedOrders(campaignId: string): Promise<number> {
+export async function discardOpenOrders(campaignId: string): Promise<number> {
   const all = await orders.listByCampaign(campaignId)
-  const pending = all.filter((order) => !order.confirmed)
-  for (const order of pending) await orders.remove(order.id)
-  return pending.length
+  const open = all.filter(orders.isOpen)
+  for (const order of open) await orders.remove(order.id)
+  return open.length
 }

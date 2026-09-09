@@ -6,10 +6,22 @@
  * there is no record of who owes money.
  */
 import { db } from '../db/db'
-import type { BackupFile, Campaign, Customer, Order, OrderItem, Setting } from '../db/types'
+import type {
+  BackupFile,
+  Campaign,
+  CampaignProduct,
+  Customer,
+  Order,
+  OrderItem,
+  Setting,
+} from '../db/types'
 import { nowIso } from '../domain/dates'
+import { splitProductCode } from '../domain/text'
 
-export const BACKUP_VERSION = 1
+export const BACKUP_VERSION = 2
+
+/** Files written before codes were split out of names and confirmation was dropped. */
+const LEGACY_VERSION = 1
 
 /** Thrown when a file is not a backup this app can read. */
 export class BackupFormatError extends Error {
@@ -20,14 +32,23 @@ export class BackupFormatError extends Error {
 }
 
 export async function exportBackup(): Promise<BackupFile> {
-  return db.transaction('r', db.campaigns, db.customers, db.orders, db.settings, async () => ({
-    version: BACKUP_VERSION,
-    exportedAt: nowIso(),
-    campaigns: await db.campaigns.orderBy('id').toArray(),
-    customers: await db.customers.orderBy('id').toArray(),
-    orders: await db.orders.orderBy('id').toArray(),
-    settings: await db.settings.orderBy('key').toArray(),
-  }))
+  return db.transaction(
+    'r',
+    db.campaigns,
+    db.customers,
+    db.orders,
+    db.campaignProducts,
+    db.settings,
+    async () => ({
+      version: BACKUP_VERSION,
+      exportedAt: nowIso(),
+      campaigns: await db.campaigns.orderBy('id').toArray(),
+      customers: await db.customers.orderBy('id').toArray(),
+      orders: await db.orders.orderBy('id').toArray(),
+      campaignProducts: await db.campaignProducts.orderBy('id').toArray(),
+      settings: await db.settings.orderBy('key').toArray(),
+    }),
+  )
 }
 
 /**
@@ -37,32 +58,94 @@ export async function exportBackup(): Promise<BackupFile> {
 export async function importBackup(file: unknown): Promise<void> {
   const backup = parseBackup(file)
 
-  await db.transaction('rw', db.campaigns, db.customers, db.orders, db.settings, async () => {
-    await db.campaigns.clear()
-    await db.customers.clear()
-    await db.orders.clear()
-    await db.settings.clear()
-    await db.campaigns.bulkAdd(backup.campaigns)
-    await db.customers.bulkAdd(backup.customers)
-    await db.orders.bulkAdd(backup.orders)
-    await db.settings.bulkAdd(backup.settings)
-  })
+  await db.transaction(
+    'rw',
+    db.campaigns,
+    db.customers,
+    db.orders,
+    db.campaignProducts,
+    db.settings,
+    async () => {
+      await db.campaigns.clear()
+      await db.customers.clear()
+      await db.orders.clear()
+      await db.campaignProducts.clear()
+      await db.settings.clear()
+      await db.campaigns.bulkAdd(backup.campaigns)
+      await db.customers.bulkAdd(backup.customers)
+      await db.orders.bulkAdd(backup.orders)
+      await db.campaignProducts.bulkAdd(backup.campaignProducts)
+      await db.settings.bulkAdd(backup.settings)
+    },
+  )
 }
 
+/**
+ * Reads a backup of either version. A file written by the previous version is
+ * still the only copy of who owes money that somebody may have on a pen drive,
+ * so it is upgraded on the way in rather than rejected.
+ */
 export function parseBackup(file: unknown): BackupFile {
   const raw = asRecord(file, 'backup file')
-  if (raw.version !== BACKUP_VERSION) {
+  if (raw.version !== BACKUP_VERSION && raw.version !== LEGACY_VERSION) {
     throw new BackupFormatError(`Unsupported backup version: ${String(raw.version)}`)
   }
+
+  const orders = asArray(raw.orders, 'orders').map(parseOrder)
+  const campaignProducts =
+    raw.campaignProducts === undefined
+      ? seedProducts(orders)
+      : asArray(raw.campaignProducts, 'campaignProducts').map(parseCampaignProduct)
 
   return {
     version: BACKUP_VERSION,
     exportedAt: typeof raw.exportedAt === 'string' ? raw.exportedAt : nowIso(),
     campaigns: asArray(raw.campaigns, 'campaigns').map(parseCampaign),
     customers: asArray(raw.customers, 'customers').map(parseCustomer),
-    orders: asArray(raw.orders, 'orders').map(parseOrder),
+    orders,
+    campaignProducts,
     settings: asArray(raw.settings, 'settings').map(parseSetting),
   }
+}
+
+/**
+ * A v1 file has no product table. Rebuild it from the items, taking the price
+ * each product was most often sold at in that campaign, exactly like the
+ * database migration does.
+ */
+function seedProducts(orders: readonly Order[]): CampaignProduct[] {
+  const products = new Map<string, CampaignProduct>()
+  const votes = new Map<string, Map<number, number>>()
+
+  for (const order of orders) {
+    for (const item of order.items) {
+      if (!item.code) continue
+      const id = `${order.campaignId}:${item.code}`
+      if (!products.has(id)) {
+        products.set(id, { id, campaignId: order.campaignId, code: item.code, name: item.name })
+      }
+      if (item.price === undefined) continue
+      const seen = votes.get(id) ?? new Map<number, number>()
+      seen.set(item.price, (seen.get(item.price) ?? 0) + 1)
+      votes.set(id, seen)
+    }
+  }
+
+  return [...products.values()]
+    .map((product) => {
+      const seen = votes.get(product.id)
+      if (!seen) return product
+      let price = 0
+      let best = 0
+      for (const [candidate, count] of seen) {
+        if (count > best || (count === best && candidate > price)) {
+          price = candidate
+          best = count
+        }
+      }
+      return { ...product, price }
+    })
+    .sort((a, b) => a.id.localeCompare(b.id))
 }
 
 type Raw = Record<string, unknown>
@@ -95,6 +178,10 @@ function asNumber(value: unknown, where: string): number {
   return value
 }
 
+function asOptionalNumber(value: unknown, where: string): number | undefined {
+  return value === undefined || value === null ? undefined : asNumber(value, where)
+}
+
 function asBoolean(value: unknown, where: string): boolean {
   if (typeof value !== 'boolean') throw new BackupFormatError(`Expected true or false in ${where}`)
   return value
@@ -112,6 +199,10 @@ function parseCampaign(value: unknown): Campaign {
     cutoffDate: asString(raw.cutoffDate, 'campaign.cutoffDate'),
     active: asBoolean(raw.active, 'campaign.active'),
     ...optional('arrivedAt', asOptionalString(raw.arrivedAt, 'campaign.arrivedAt')),
+    ...optional(
+      'supplierInvoiceAmount',
+      asOptionalNumber(raw.supplierInvoiceAmount, 'campaign.supplierInvoiceAmount'),
+    ),
   }
 }
 
@@ -133,10 +224,32 @@ function parseCustomer(value: unknown): Customer {
 
 function parseItem(value: unknown): OrderItem {
   const raw = asRecord(value, 'an order item')
+  const written = asString(raw.name, 'item.name')
+  const code = asOptionalString(raw.code, 'item.code')
+  // v1 kept the code inside the name and used 0 for "no price yet". Both are
+  // undone here so an imported file behaves like data written today.
+  const split = code ? { code, name: written } : splitProductCode(written)
+  const price = raw.price === undefined || raw.price === null ? undefined : asNumber(raw.price, 'item.price')
+
   return {
-    name: asString(raw.name, 'item.name'),
+    ...(split.code ? { code: split.code } : {}),
+    name: split.name,
     quantity: asNumber(raw.quantity, 'item.quantity'),
-    price: asNumber(raw.price, 'item.price'),
+    ...(price === undefined || price === 0 ? {} : { price }),
+  }
+}
+
+function parseCampaignProduct(value: unknown): CampaignProduct {
+  const raw = asRecord(value, 'a campaign product')
+  const campaignId = asString(raw.campaignId, 'campaignProduct.campaignId')
+  const code = asString(raw.code, 'campaignProduct.code')
+  return {
+    id: typeof raw.id === 'string' ? raw.id : `${campaignId}:${code}`,
+    campaignId,
+    code,
+    name: asString(raw.name, 'campaignProduct.name'),
+    ...optional('price', asOptionalNumber(raw.price, 'campaignProduct.price')),
+    ...optional('cost', asOptionalNumber(raw.cost, 'campaignProduct.cost')),
   }
 }
 
@@ -149,7 +262,6 @@ function parseOrder(value: unknown): Order {
     items: asArray(raw.items, 'order.items').map(parseItem),
     paidAmount: asNumber(raw.paidAmount, 'order.paidAmount'),
     shippingCost: asNumber(raw.shippingCost, 'order.shippingCost'),
-    confirmed: asBoolean(raw.confirmed, 'order.confirmed'),
     contacts: asArray(raw.contacts, 'order.contacts').map((contact) => asString(contact, 'order.contacts')),
     createdAt: asString(raw.createdAt, 'order.createdAt'),
     ...optional('deliveredAt', asOptionalString(raw.deliveredAt, 'order.deliveredAt')),

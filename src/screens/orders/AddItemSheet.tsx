@@ -7,7 +7,7 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 import type { CapturedItem } from '../../data/orders'
-import { productSuggestions, type PastItem } from '../../domain'
+import { productLabel, productSuggestions, type PastItem } from '../../domain'
 import { BigButton, Card, MoneyField, parseAmount, Row, SearchField, SectionHeader, Sheet, Stepper } from '../../ui'
 
 const MAX_SUGGESTIONS = 6
@@ -40,7 +40,10 @@ export function AddItemSheet({ open, onClose, history, onAdd }: AddItemSheetProp
 
   function add() {
     if (trimmed === '') return
-    onAdd({ name: trimmed, quantity, price: parseAmount(price) ?? 0 })
+    const parsed = parseAmount(price)
+    // No price stays no price. Writing a zero here is what used to make an
+    // order look settled while a line in it had never been priced.
+    onAdd({ name: trimmed, quantity, ...(parsed === undefined || parsed <= 0 ? {} : { price: parsed }) })
     onClose()
   }
 
@@ -68,12 +71,12 @@ export function AddItemSheet({ open, onClose, history, onAdd }: AddItemSheetProp
           <div className="flex flex-col gap-2">
             {suggestions.map((suggestion) => (
               <Row
-                key={suggestion.name}
-                title={suggestion.name}
+                key={productLabel(suggestion)}
+                title={productLabel(suggestion)}
                 amount={suggestion.price}
                 onClick={() => {
-                  setName(suggestion.name)
-                  setPrice(suggestion.price > 0 ? suggestion.price.toFixed(2) : '')
+                  setName(productLabel(suggestion))
+                  setPrice(suggestion.price === undefined ? '' : suggestion.price.toFixed(2))
                 }}
               />
             ))}

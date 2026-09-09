@@ -32,13 +32,13 @@ export interface MessageTemplate {
  * out.
  *
  * They are verbs, because in all three places what she needs to know is what
- * she is about to say. "Confirmar pedido" in particular is not among them: the
- * pedido screen already has a button by that name that confirms the order
- * without writing to anybody, and two identical labels doing different things
- * on one screen is how an app stops being trusted.
+ * she is about to say. None of them asks about a state of the app: there is
+ * nothing to confirm, because writing the pedido down is the commitment. The
+ * first message is simply the first message, and it is named after what it
+ * says rather than after a flag it used to tick.
  */
 export const TEMPLATE_LABEL: Record<TemplateKey, string> = {
-  confirmation: 'Pedir que confirme',
+  confirmation: 'Avisar lo que anoté',
   delivery: 'Preguntar la entrega',
   payment: 'Pedir el pago',
   cutoff: 'Avisar del cierre',

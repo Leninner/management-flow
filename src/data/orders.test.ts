@@ -20,22 +20,48 @@ describe('addItem', () => {
     expect(order).toMatchObject({
       campaignId: CAMPAIGN,
       customerId: CUSTOMER,
-      items: [{ name: '38588 Novage', quantity: 2, price: 12.9 }],
+      items: [{ code: '38588', name: 'Novage', quantity: 2, price: 12.9 }],
       paidAmount: 0,
       shippingCost: 0,
-      confirmed: false,
       contacts: [],
     })
     expect(order.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
     await expect(db.orders.count()).resolves.toBe(1)
   })
 
-  it('defaults the quantity to one and the price to zero', async () => {
+  it('defaults the quantity to one and leaves the price absent, never zero', async () => {
     const order = await orders.addItem({ campaignId: CAMPAIGN, customerId: CUSTOMER, item: { name: 'Nuevo' } })
-    expect(order.items).toEqual([{ name: 'Nuevo', quantity: 1, price: 0 }])
+    expect(order.items).toEqual([{ name: 'Nuevo', quantity: 1 }])
+    expect(order.items[0]?.price).toBeUndefined()
   })
 
-  it('rejects an item without a name', async () => {
+  it('pulls the Oriflame code out of what she typed', async () => {
+    const order = await orders.addItem({
+      campaignId: CAMPAIGN,
+      customerId: CUSTOMER,
+      item: { name: '38588 Novage Ecollagen', price: 12.9 },
+    })
+    expect(order.items[0]).toMatchObject({ code: '38588', name: 'Novage Ecollagen' })
+    // The campaign catalogue builds itself, so the cost has somewhere to land.
+    await expect(db.campaignProducts.get(`${CAMPAIGN}:38588`)).resolves.toMatchObject({
+      code: '38588',
+      name: 'Novage Ecollagen',
+      price: 12.9,
+    })
+  })
+
+  it('takes a bare code and lets the name arrive later', async () => {
+    const order = await orders.addItem({
+      campaignId: CAMPAIGN,
+      customerId: CUSTOMER,
+      item: { code: '38588', name: '' },
+    })
+    // The code stands in as its own name, so the line reads "38588" and not
+    // as a nameless row she cannot recognise.
+    expect(order.items[0]).toEqual({ code: '38588', name: '38588', quantity: 1 })
+  })
+
+  it('rejects an item with neither a code nor a name', async () => {
     await expect(
       orders.addItem({ campaignId: CAMPAIGN, customerId: CUSTOMER, item: { name: '   ' } }),
     ).rejects.toThrow()
@@ -68,7 +94,7 @@ describe('addItem', () => {
       item: { name: '  38588 NOVAGE ', quantity: 1, price: 14.5 },
     })
 
-    expect(order.items).toEqual([{ name: '38588 Novage', quantity: 3, price: 12.9 }])
+    expect(order.items).toEqual([{ code: '38588', name: 'Novage', quantity: 3, price: 12.9 }])
   })
 
   it('fills in a price that was left at zero during the live', async () => {
@@ -154,12 +180,6 @@ describe('the rest of the order lifecycle', () => {
     await expect(orders.setShippingCost(created.id, -1)).rejects.toThrow()
   })
 
-  it('confirms and unconfirms an order', async () => {
-    const created = await seed()
-    await expect(orders.markConfirmed(created.id)).resolves.toMatchObject({ confirmed: true })
-    await expect(orders.markConfirmed(created.id, false)).resolves.toMatchObject({ confirmed: false })
-  })
-
   it('marks the order delivered with an ISO date', async () => {
     const created = await seed()
     const order = await orders.markDelivered(created.id, '2026-09-22T00:00:00.000Z')
@@ -214,7 +234,7 @@ describe('reads', () => {
   })
 })
 
-describe('moveUnconfirmed', () => {
+describe('moveOpenOrders', () => {
   const NEXT = 'camp-14'
 
   beforeEach(async () => {
@@ -222,12 +242,12 @@ describe('moveUnconfirmed', () => {
     await db.campaigns.add({ id: NEXT, name: 'C14-2026', cutoffDate: '2026-10-10', active: true })
   })
 
-  it('carries the unconfirmed orders forward and leaves the confirmed ones behind', async () => {
+  it('carries the orders that never started and leaves the ones already paid', async () => {
     const carried = await orders.addItem({ campaignId: CAMPAIGN, customerId: CUSTOMER, item: { name: 'Labial' } })
-    const stays = await orders.addItem({ campaignId: CAMPAIGN, customerId: 'cus-2', item: { name: 'Crema' } })
-    await orders.markConfirmed(stays.id)
+    const stays = await orders.addItem({ campaignId: CAMPAIGN, customerId: 'cus-2', item: { name: 'Crema', price: 9 } })
+    await orders.recordPayment(stays.id, 9)
 
-    await expect(orders.moveUnconfirmed(CAMPAIGN, NEXT)).resolves.toBe(1)
+    await expect(orders.moveOpenOrders(CAMPAIGN, NEXT)).resolves.toBe(1)
 
     await expect(db.orders.get(carried.id)).resolves.toMatchObject({ campaignId: NEXT })
     await expect(db.orders.get(stays.id)).resolves.toMatchObject({ campaignId: CAMPAIGN })
@@ -240,21 +260,21 @@ describe('moveUnconfirmed', () => {
       customerId: CUSTOMER,
       item: { name: '38588 Novage', quantity: 2, price: 12.9 },
     })
-    await orders.recordPayment(created.id, 5.5)
+    // An order that has been paid is not one that never got going, so the ones
+    // that travel are exactly the ones with nothing in them yet.
     await orders.setShippingCost(created.id, 3.25)
     await orders.setNotes(created.id, 'manda por Servientrega')
     await orders.recordContact(created.id, '2026-09-06T00:00:00.000Z')
 
-    await orders.moveUnconfirmed(CAMPAIGN, NEXT)
+    await orders.moveOpenOrders(CAMPAIGN, NEXT)
 
     await expect(db.orders.get(created.id)).resolves.toEqual({
       id: created.id,
       campaignId: NEXT,
       customerId: CUSTOMER,
-      items: [{ name: '38588 Novage', quantity: 2, price: 12.9 }],
-      paidAmount: 5.5,
+      items: [{ code: '38588', name: 'Novage', quantity: 2, price: 12.9 }],
+      paidAmount: 0,
       shippingCost: 3.25,
-      confirmed: false,
       contacts: ['2026-09-06T00:00:00.000Z'],
       createdAt: created.createdAt,
       notes: 'manda por Servientrega',
@@ -267,7 +287,6 @@ describe('moveUnconfirmed', () => {
       customerId: CUSTOMER,
       item: { name: 'Labial', quantity: 1, price: 7 },
     })
-    await orders.recordPayment(carried.id, 5)
 
     const waiting = await orders.addItem({
       campaignId: NEXT,
@@ -278,7 +297,7 @@ describe('moveUnconfirmed', () => {
     await orders.recordPayment(waiting.id, 3)
     await orders.setShippingCost(waiting.id, 2)
 
-    await expect(orders.moveUnconfirmed(CAMPAIGN, NEXT)).resolves.toBe(1)
+    await expect(orders.moveOpenOrders(CAMPAIGN, NEXT)).resolves.toBe(1)
 
     await expect(db.orders.count()).resolves.toBe(1)
     await expect(db.orders.get(carried.id)).resolves.toBeUndefined()
@@ -288,22 +307,22 @@ describe('moveUnconfirmed', () => {
         { name: 'labial', quantity: 3, price: 8 },
         { name: 'Crema', quantity: 1, price: 9 },
       ],
-      paidAmount: 8,
+      paidAmount: 3,
       shippingCost: 2,
     })
   })
 
   it('returns zero when there is nothing to carry', async () => {
-    await expect(orders.moveUnconfirmed(CAMPAIGN, NEXT)).resolves.toBe(0)
+    await expect(orders.moveOpenOrders(CAMPAIGN, NEXT)).resolves.toBe(0)
   })
 
   it('refuses to move a campaign into itself', async () => {
-    await expect(orders.moveUnconfirmed(CAMPAIGN, CAMPAIGN)).rejects.toThrow()
+    await expect(orders.moveOpenOrders(CAMPAIGN, CAMPAIGN)).rejects.toThrow()
   })
 
   it('refuses an unknown target campaign and changes nothing', async () => {
     const created = await orders.addItem({ campaignId: CAMPAIGN, customerId: CUSTOMER, item: { name: 'Labial' } })
-    await expect(orders.moveUnconfirmed(CAMPAIGN, 'nope')).rejects.toThrow()
+    await expect(orders.moveOpenOrders(CAMPAIGN, 'nope')).rejects.toThrow()
     await expect(db.orders.get(created.id)).resolves.toMatchObject({ campaignId: CAMPAIGN })
   })
 
@@ -316,7 +335,7 @@ describe('moveUnconfirmed', () => {
     const waiting = await orders.addItem({ campaignId: NEXT, customerId: CUSTOMER, item: { name: 'Crema', price: 9 } })
 
     const failing = vi.spyOn(db.orders, 'bulkDelete').mockRejectedValueOnce(new Error('disk went away'))
-    await expect(orders.moveUnconfirmed(CAMPAIGN, NEXT)).rejects.toThrow('disk went away')
+    await expect(orders.moveOpenOrders(CAMPAIGN, NEXT)).rejects.toThrow('disk went away')
     failing.mockRestore()
 
     await expect(db.orders.count()).resolves.toBe(2)
@@ -360,7 +379,7 @@ describe('editing an item in place', () => {
         item: { name: '38588 Novage', quantity: 1, price: 12.9 },
       })
       const order = await orders.setItemQuantity(created.id, '  38588 NOVAGE ', 3)
-      expect(order.items).toEqual([{ name: '38588 Novage', quantity: 3, price: 12.9 }])
+      expect(order.items).toEqual([{ code: '38588', name: 'Novage', quantity: 3, price: 12.9 }])
     })
 
     it('removes the line when the quantity drops to zero', async () => {

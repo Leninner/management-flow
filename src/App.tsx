@@ -1,14 +1,11 @@
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useState, type ReactNode } from 'react'
-import { campaigns } from './data'
-import { Capture } from './screens/Capture'
+import { NewOrder } from './screens/NewOrder'
+import { Costs } from './screens/Costs'
 import { CustomerDetail } from './screens/CustomerDetail'
-import { Customers } from './screens/Customers'
 import { More } from './screens/More'
 import { Orders, type OrderFilter } from './screens/Orders'
 import { OrderDetail } from './screens/OrderDetail'
 import { SupplierOrder } from './screens/SupplierOrder'
-import { Today, type OrdersShortcut } from './screens/Today'
 import {
   AppShell,
   NavigationProvider,
@@ -18,22 +15,22 @@ import {
 } from './ui'
 
 const VIEW_TITLE: Record<View['kind'], string> = {
-  capture: 'Anotar',
+  newOrder: 'Agregar pedido',
   orderDetail: 'Pedido',
   customerDetail: 'Cliente',
-  supplierOrder: 'Pedido a Oriflame',
+  costs: 'Oriflame',
 }
 
 function renderView(view: View): ReactNode {
   switch (view.kind) {
-    case 'capture':
-      return <Capture />
+    case 'newOrder':
+      return <NewOrder />
     case 'orderDetail':
       return <OrderDetail orderId={view.orderId} />
     case 'customerDetail':
       return <CustomerDetail customerId={view.customerId} />
-    case 'supplierOrder':
-      return <SupplierOrder />
+    case 'costs':
+      return <Costs />
   }
 }
 
@@ -46,34 +43,20 @@ export function App() {
 }
 
 function Shell() {
-  const { screen, view, go, push, back } = useNavigation()
+  const { screen, view, go, back } = useNavigation()
 
   /**
-   * The only state the shell owns. Today's "Por cobrar" and "Por entregar"
-   * rows open Pedidos already filtered, and a row saying 5 that opens a list
-   * of 7 is exactly what makes her hesitate.
+   * The only state the shell owns. A row that says 5 and opens a list of 7 is
+   * exactly what makes her hesitate, so whoever sends her to Pedidos can say
+   * which view she is arriving at.
    */
   const [ordersFilter, setOrdersFilter] = useState<OrderFilter | undefined>(undefined)
 
-  /**
-   * Capturing needs a campaign to write into. Without one the button lands on
-   * a screen that can only tell her to go back, so it is not drawn at all --
-   * which is also what keeps it from sitting on top of the one button the
-   * first-run screen has.
-   */
-  const active = useLiveQuery(async () => ({ campaign: await campaigns.getActive() }), [])
-  const canCapture = active?.campaign !== undefined
-
   function selectTab(next: Screen) {
-    // Tapping the tab itself always gives the plain list. Only the Hoy
-    // shortcuts preselect, so the filter can never be stale.
+    // Tapping the tab itself always gives the plain list, so the filter can
+    // never be stale.
     setOrdersFilter(undefined)
     go(next)
-  }
-
-  function openOrdersFiltered(filter: OrdersShortcut) {
-    setOrdersFilter(filter)
-    go('orders')
   }
 
   return (
@@ -84,32 +67,29 @@ function Shell() {
       onBack={view ? back : undefined}
       // A pushed view owns the bottom of the phone for its own action.
       tabBar={!view}
-      onCapture={canCapture ? () => push({ kind: 'capture' }) : undefined}
     >
       {/* Remounting per view keeps a detail screen from inheriting stale state. */}
       {view ? (
         <div key={viewKey(view)}>{renderView(view)}</div>
       ) : (
-        <Tab screen={screen} ordersFilter={ordersFilter} onOpenOrders={openOrdersFiltered} />
+        <Tab screen={screen} ordersFilter={ordersFilter} />
       )}
     </AppShell>
   )
 }
 
-interface TabProps {
+function Tab({
+  screen,
+  ordersFilter,
+}: {
   screen: Screen
   ordersFilter: OrderFilter | undefined
-  onOpenOrders: (filter: OrdersShortcut) => void
-}
-
-function Tab({ screen, ordersFilter, onOpenOrders }: TabProps): ReactNode {
+}): ReactNode {
   switch (screen) {
-    case 'today':
-      return <Today onOpenOrders={onOpenOrders} />
     case 'orders':
       return <Orders initialFilter={ordersFilter} />
-    case 'customers':
-      return <Customers />
+    case 'oriflame':
+      return <SupplierOrder />
     case 'more':
       return <More />
   }

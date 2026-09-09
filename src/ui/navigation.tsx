@@ -9,15 +9,21 @@ import {
   type ReactNode,
 } from 'react'
 
-/** The four bottom tabs. There is nothing else at the top level. */
-export type Screen = 'today' | 'orders' | 'customers' | 'more'
+/** The three bottom tabs. There is nothing else at the top level. */
+export type Screen = 'orders' | 'oriflame' | 'more'
 
-/** Detail views pushed on top of a tab. Each one has a back affordance. */
+/**
+ * Views pushed on top of a tab. Each one has a way back.
+ *
+ * Writing a pedido is one of these rather than a tab: it is something she opens
+ * and closes, not a place she lives in. As a tab it was also the pedido drawn
+ * twice — once to write it and once, in Pedidos, to collect it.
+ */
 export type View =
-  | { kind: 'capture' }
+  | { kind: 'newOrder' }
   | { kind: 'orderDetail'; orderId: string }
   | { kind: 'customerDetail'; customerId: string }
-  | { kind: 'supplierOrder' }
+  | { kind: 'costs' }
 
 export interface Navigation {
   /** The selected tab. Always one of the four, even while a view is open. */
@@ -44,7 +50,7 @@ export function useNavigation(): Navigation {
 
 export function NavigationProvider({
   children,
-  initialScreen = 'today',
+  initialScreen = 'orders',
 }: {
   children: ReactNode
   initialScreen?: Screen

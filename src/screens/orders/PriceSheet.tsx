@@ -9,7 +9,8 @@ export interface PriceSheetProps {
   open: boolean
   onClose: () => void
   name: string
-  price: number
+  /** Absent when the line was written down during a live and never priced. */
+  price?: number
   onSave: (price: number) => void
 }
 
@@ -17,7 +18,7 @@ export function PriceSheet({ open, onClose, name, price, onSave }: PriceSheetPro
   const [amount, setAmount] = useState('')
 
   useEffect(() => {
-    if (open) setAmount(price > 0 ? price.toFixed(2) : '')
+    if (open) setAmount(price === undefined ? '' : price.toFixed(2))
   }, [open, price])
 
   const value = parseAmount(amount)

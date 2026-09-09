@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react'
 import { campaigns, orders } from '../../data'
 import { BigButton, SectionHeader, Sheet, TextField } from '../../ui'
-import { discardUnconfirmedOrders } from './campaignSwitch'
+import { discardOpenOrders } from './campaignSwitch'
 import { ErrorNote } from './fields'
 import { todayInput } from './format'
 
@@ -17,14 +17,14 @@ export interface NewCampaignSheetProps {
   onClose: () => void
   /** The campaign that is closing, if there is one. */
   currentCampaignId?: string
-  unconfirmedCount: number
+  openCount: number
 }
 
 export function NewCampaignSheet({
   open,
   onClose,
   currentCampaignId,
-  unconfirmedCount,
+  openCount,
 }: NewCampaignSheetProps) {
   const [name, setName] = useState('')
   const [cutoff, setCutoff] = useState(todayInput)
@@ -50,9 +50,9 @@ export function NewCampaignSheet({
     setFailed(false)
     try {
       const created = await campaigns.create({ name: name.trim(), cutoffDate: cutoff })
-      if (currentCampaignId && unconfirmedCount > 0) {
-        if (choice === 'carry') await orders.moveUnconfirmed(currentCampaignId, created.id)
-        else await discardUnconfirmedOrders(currentCampaignId)
+      if (currentCampaignId && openCount > 0) {
+        if (choice === 'carry') await orders.moveOpenOrders(currentCampaignId, created.id)
+        else await discardOpenOrders(currentCampaignId)
       }
       onClose()
     } catch {
@@ -80,9 +80,9 @@ export function NewCampaignSheet({
         <TextField value={cutoff} onChange={setCutoff} label="Corte" type="date" />
         {failed && <ErrorNote>Revisa el nombre y la fecha</ErrorNote>}
 
-        {currentCampaignId && unconfirmedCount > 0 && (
+        {currentCampaignId && openCount > 0 && (
           <>
-            <SectionHeader title="Sin confirmar" count={unconfirmedCount} />
+            <SectionHeader title="Sin empezar" count={openCount} />
             <div className="flex flex-col gap-2">
               <BigButton
                 floating={false}

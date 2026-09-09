@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { consolidateForSupplier, formatForClipboard } from './consolidation'
+import { consolidateForSupplier, formatForClipboard, formatForQuickOrder, withoutCode } from './consolidation'
 import { makeItem, makeOrder } from './test-factories'
 
 describe('consolidateForSupplier', () => {
@@ -22,20 +22,20 @@ describe('consolidateForSupplier', () => {
     ]
     const result = consolidateForSupplier(orders)
     expect(result.items).toEqual([
-      { name: '38588 Novage', quantity: 5 },
-      { name: '42102 Labial', quantity: 1 },
+      { code: '38588', name: 'Novage', quantity: 5 },
+      { code: '42102', name: 'Labial', quantity: 1 },
     ])
     expect(result.totalUnits).toBe(6)
     expect(result.customerCount).toBe(2)
   })
 
-  it('treats names that differ only in case or padding as the same product', () => {
+  it('treats the same code as the same product however the name was typed', () => {
     const orders = [
       makeOrder({ id: 'a', customerId: 'cus-1', items: [makeItem({ name: '38588 Novage', quantity: 1 })] }),
       makeOrder({ id: 'b', customerId: 'cus-2', items: [makeItem({ name: '  38588 novage  ', quantity: 2 })] }),
     ]
     const result = consolidateForSupplier(orders)
-    expect(result.items).toEqual([{ name: '38588 Novage', quantity: 3 }])
+    expect(result.items).toEqual([{ code: '38588', name: 'Novage', quantity: 3 }])
     expect(result.totalUnits).toBe(3)
   })
 
@@ -101,5 +101,31 @@ describe('formatForClipboard', () => {
   it('still renders a header for an empty campaign', () => {
     const text = formatForClipboard(consolidateForSupplier([]), 'C14')
     expect(text).toBe(['PEDIDO CAMPAÑA C14 — 0 clientes', ' Total: 0 unidades'].join('\n'))
+  })
+})
+
+describe('formatForQuickOrder', () => {
+  it('writes code and quantity, one product per line, for Oriflame to swallow', () => {
+    const orders = [
+      makeOrder({
+        id: 'a',
+        customerId: 'cus-1',
+        items: [makeItem({ name: '38588 Novage', quantity: 5 }), makeItem({ name: '42102 Labial', quantity: 3 })],
+      }),
+    ]
+    expect(formatForQuickOrder(consolidateForSupplier(orders))).toBe('38588\t5\n42102\t3')
+  })
+
+  it('leaves out what has no code and hands it back to be looked up by hand', () => {
+    const orders = [
+      makeOrder({
+        id: 'a',
+        customerId: 'cus-1',
+        items: [makeItem({ name: '38588 Novage', quantity: 1 }), makeItem({ name: 'Muestra de perfume', quantity: 2 })],
+      }),
+    ]
+    const result = consolidateForSupplier(orders)
+    expect(formatForQuickOrder(result)).toBe('38588\t1')
+    expect(withoutCode(result).map((item) => item.name)).toEqual(['Muestra de perfume'])
   })
 })

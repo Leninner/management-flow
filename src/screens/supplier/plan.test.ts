@@ -6,55 +6,50 @@ const maria = makeCustomer({ id: 'u1', name: 'María' })
 const ana = makeCustomer({ id: 'u2', name: 'Ana' })
 const people = [maria, ana]
 
-const confirmed = makeOrder({
+const paid = makeOrder({
   id: 'o1',
   customerId: 'u1',
-  confirmed: true,
-  items: [makeItem({ name: '38588 Novage', quantity: 3 })],
+  paidAmount: 38.7,
+  items: [makeItem({ code: '38588', name: 'Novage', quantity: 3, price: 12.9 })],
 })
 
-const unconfirmed = makeOrder({
+/** Nothing in yet: this is the money she fronts with her own card. */
+const unpaid = makeOrder({
   id: 'o2',
   customerId: 'u2',
-  confirmed: false,
-  items: [makeItem({ name: '38588 novage', quantity: 2 }), makeItem({ name: '42102 Labial', quantity: 1 })],
+  items: [
+    makeItem({ code: '38588', name: 'novage', quantity: 2, price: 12.9 }),
+    makeItem({ code: '42102', name: 'Labial', quantity: 1, price: 7 }),
+  ],
 })
 
 describe('buildSupplierPlan', () => {
-  it('merges the same product across orders no matter how it was typed', () => {
-    const plan = buildSupplierPlan([confirmed, unconfirmed], people, true)
-    expect(plan.lines.map((line) => [line.name, line.quantity])).toEqual([
-      ['38588 Novage', 5],
-      ['42102 Labial', 1],
+  it('merges the same product across pedidos no matter how it was typed', () => {
+    const plan = buildSupplierPlan([paid, unpaid], people)
+    expect(plan.lines.map((line) => [line.code, line.quantity])).toEqual([
+      ['38588', 5],
+      ['42102', 1],
     ])
     expect(plan.consolidation.totalUnits).toBe(6)
     expect(plan.consolidation.customerCount).toBe(2)
   })
 
   it('names who is behind each line, biggest buyer first', () => {
-    const plan = buildSupplierPlan([confirmed, unconfirmed], people, true)
+    const plan = buildSupplierPlan([paid, unpaid], people)
     expect(plan.lines[0]?.customers).toEqual([
-      { customerId: 'u1', name: 'María', quantity: 3, confirmed: true },
-      { customerId: 'u2', name: 'Ana', quantity: 2, confirmed: false },
+      { customerId: 'u1', name: 'María', quantity: 3, unpaid: false },
+      { customerId: 'u2', name: 'Ana', quantity: 2, unpaid: true },
     ])
   })
 
-  it('drops the unconfirmed orders when she asks for it', () => {
-    const plan = buildSupplierPlan([confirmed, unconfirmed], people, false)
-    expect(plan.lines).toHaveLength(1)
-    expect(plan.consolidation.totalUnits).toBe(3)
+  it('adds up what she is fronting for people who have put nothing in', () => {
+    const plan = buildSupplierPlan([paid, unpaid], people)
+    expect(plan.exposedOrders).toBe(1)
+    expect(plan.exposedCents).toBe(3280)
   })
 
-  it('keeps counting the unconfirmed units even when they are excluded', () => {
-    for (const included of [true, false]) {
-      const plan = buildSupplierPlan([confirmed, unconfirmed], people, included)
-      expect(plan.unconfirmedUnits).toBe(3)
-      expect(plan.unconfirmedOrders).toBe(1)
-    }
-  })
-
-  it('survives an order whose customer is gone', () => {
-    const plan = buildSupplierPlan([confirmed], [], true)
+  it('survives a pedido whose customer is gone', () => {
+    const plan = buildSupplierPlan([paid], [])
     expect(plan.lines[0]?.customers[0]?.name).toBe('Sin nombre')
   })
 })
@@ -66,7 +61,7 @@ describe('buyersLabel', () => {
         customerId: `u${index}`,
         name: `Cliente ${index}`,
         quantity: 1,
-        confirmed: true,
+        unpaid: false,
       }))
 
     expect(buyersLabel(line(1))).toBe('Cliente 0')

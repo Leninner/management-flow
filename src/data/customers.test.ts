@@ -104,8 +104,7 @@ describe('merge', () => {
         ],
         paidAmount: 1,
         shippingCost: 2,
-        confirmed: true,
-      }),
+        }),
     )
 
     await customers.merge(target.id, source.id)
@@ -120,8 +119,7 @@ describe('merge', () => {
       ],
       paidAmount: 6,
       shippingCost: 5,
-      confirmed: true,
-    })
+      })
   })
 
   it('refuses to merge a customer into itself or into a missing one', async () => {

@@ -12,7 +12,6 @@ import {
   CreditCard,
   Landmark,
   MessageCircle,
-  ShoppingBag,
   Upload,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -27,7 +26,6 @@ import {
   Sheet,
   StatusPill,
   TextArea,
-  useNavigation,
 } from '../ui'
 import {
   BANK_ACCOUNT_KEY,
@@ -58,12 +56,11 @@ async function loadSettings() {
   return {
     campaign,
     values: new Map(entries.map((entry) => [entry.key, entry.value])),
-    unconfirmedCount: campaignOrders.filter((order) => !order.confirmed).length,
+    openCount: campaignOrders.filter(orders.isOpen).length,
   }
 }
 
 export function More() {
-  const { push } = useNavigation()
   const state = useLiveQuery(loadSettings, [])
   const [persisted, setPersisted] = useState<boolean | null>(null)
   const [editing, setEditing] = useState<EditableTemplate | null>(null)
@@ -99,7 +96,7 @@ export function More() {
 
   if (!state) return null
 
-  const { campaign, values, unconfirmedCount } = state
+  const { campaign, values, openCount } = state
   const age = backupAge(values.get(LAST_BACKUP_KEY), nowIso())
   const bankAccount = values.get(BANK_ACCOUNT_KEY) ?? ''
   const templates = resolveTemplates(values)
@@ -159,14 +156,9 @@ export function More() {
           <Row icon={CalendarDays} title="Sin campaña abierta" />
         )}
         <Row
-          icon={ShoppingBag}
-          title="Pedido a Oriflame"
-          onClick={() => push({ kind: 'supplierOrder' })}
-        />
-        <Row
           icon={CalendarPlus}
           title="Nueva campaña"
-          subtitle={unconfirmedCount > 0 ? `${unconfirmedCount} sin confirmar` : undefined}
+          subtitle={openCount > 0 ? `${openCount} sin empezar` : undefined}
           onClick={() => setStartingCampaign(true)}
         />
       </div>
@@ -254,7 +246,7 @@ export function More() {
         open={startingCampaign}
         onClose={() => setStartingCampaign(false)}
         currentCampaignId={campaign?.id}
-        unconfirmedCount={unconfirmedCount}
+        openCount={openCount}
       />
 
     </>

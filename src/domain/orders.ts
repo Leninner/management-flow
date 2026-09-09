@@ -8,7 +8,7 @@
 import type { Order, OrderItem } from '../db/types'
 import { earlierIso, laterIso } from './dates'
 import { fromCents, toCents } from './money'
-import { normalizeName } from './text'
+import { productKey } from './text'
 
 /**
  * Same product, one line. The target's price wins: it is what the customer was
@@ -17,8 +17,8 @@ import { normalizeName } from './text'
 export function mergeItems(targetItems: OrderItem[], sourceItems: OrderItem[]): OrderItem[] {
   const merged = targetItems.map((item) => ({ ...item }))
   for (const item of sourceItems) {
-    const key = normalizeName(item.name)
-    const existing = merged.find((candidate) => normalizeName(candidate.name) === key)
+    const key = productKey(item)
+    const existing = merged.find((candidate) => productKey(candidate) === key)
     if (existing) existing.quantity += item.quantity
     else merged.push({ ...item })
   }
@@ -33,7 +33,6 @@ export function combineOrders(target: Order, source: Order): Order {
     items: mergeItems(target.items, source.items),
     paidAmount: fromCents(toCents(target.paidAmount) + toCents(source.paidAmount)),
     shippingCost: fromCents(toCents(target.shippingCost) + toCents(source.shippingCost)),
-    confirmed: target.confirmed || source.confirmed,
     // Half a combined order delivered is not a delivered order: better to hand
     // it over twice than to drop it off the "por entregar" list.
     deliveredAt:

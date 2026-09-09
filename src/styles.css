@@ -4,22 +4,28 @@
  * Visual identity. The rule is that a screen must be understandable at a
  * glance, without reading: big numbers, small labels, colour carries state.
  *
- * The surface language is white paper with hairline rules, not tinted paper
- * with drop shadows. A hairline survives direct sunlight on a phone held at
- * arm's length; a soft shadow does not. Shadow is kept for the two things that
- * genuinely float above the page: the hero button and a sheet.
+ * The surface language is a tinted ground with white sheets on top. A pedido
+ * is a document that gets filled in, and the ground is what lets it read as
+ * one. The tint does the separating, so the sheet needs no border and only a
+ * whisper of shadow to soften its edge -- the old rule against shadows was
+ * about white on white, where the shadow was the only separation and lost that
+ * fight in direct sunlight.
  *
  * The type is the system face on purpose: on her iPhone that is the same font
  * as Mensajes and Ajustes, so nothing here reads as foreign.
  */
 @theme {
-  --color-paper: #ffffff;
+  /* Pale lavender: the violet was already the brand, so the ground belongs to
+     the same family instead of fighting it. */
+  --color-paper: #ece8fb;
   --color-card: #ffffff;
   /* A recessed surface, for things you type into and controls that sit inside
      a card. On white, a fill reads as "input" faster than a border does. */
   --color-fill: #f4f4f7;
   --color-ink: #17161c;
   --color-muted: #8c8b98;
+  /* Muted text that sits on the tinted ground rather than on a sheet. */
+  --color-faint: #7c76a0;
   /* The hairline. Every separation in the app is this one line. */
   --color-line: #ecebf1;
 
@@ -46,11 +52,12 @@
 
   --text-base: 1.0625rem; /* 17px floor for readability */
 
-  --radius-card: 1.375rem;
+  --radius-card: 1.5rem;
   --radius-field: 1rem;
   --radius-tight: 0.875rem;
 
-  /* Only what actually floats. A card gets a hairline instead. */
+  /* A sheet resting on the ground, and the one button that genuinely floats. */
+  --shadow-sheet: 0 2px 10px rgba(35, 28, 78, 0.05);
   --shadow-lift: 0 8px 22px rgba(109, 94, 252, 0.26);
   --shadow-pop: 0 -10px 40px rgba(23, 22, 28, 0.13);
 

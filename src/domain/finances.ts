@@ -14,6 +14,10 @@ import { orderSubtotalCents, toCents } from './money'
 /**
  * What was sold in a campaign, items only.
  *
+ * Every order counts. There used to be a confirmation flag and this function
+ * skipped anything without it, so the number she read as her earnings was
+ * quietly short by whatever she had not gone back to tick.
+ *
  * Shipping is deliberately out: it comes in from the customer and goes out to
  * the courier the same day. Counting it would tell her she earns more than she
  * earns, and she buys the next catalogue against that number.
@@ -21,8 +25,7 @@ import { orderSubtotalCents, toCents } from './money'
 export function campaignSoldCents(orders: readonly Order[], campaignId: string): number {
   let cents = 0
   for (const order of orders) {
-    // An unconfirmed order is still only a code shouted during a live.
-    if (order.campaignId !== campaignId || !order.confirmed) continue
+    if (order.campaignId !== campaignId) continue
     cents += orderSubtotalCents(order)
   }
   return cents

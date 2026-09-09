@@ -9,7 +9,7 @@ import {
 } from 'react'
 import { cx } from './cx'
 import type { Screen } from './navigation'
-import { CAPTURE_OVERHANG, TAB_BAR_HEIGHT, TabBar } from './TabBar'
+import { TAB_BAR_HEIGHT, TabBar } from './TabBar'
 
 const ACTION_BAR_HEIGHT = 96
 
@@ -42,12 +42,10 @@ export interface AppShellProps {
   onBack?: () => void
   /**
    * Off on a pushed view. A detail screen owns the whole bottom of the phone
-   * so its one action can sit under the thumb; the tab bar would fight it for
-   * that room and the raised capture button would land on top of it.
+   * so its one action can sit under the thumb, and the tab bar would fight it
+   * for that room.
    */
   tabBar?: boolean
-  /** The raised button in the middle of the tab bar. */
-  onCapture?: () => void
   badges?: Partial<Record<Screen, number>>
 }
 
@@ -58,7 +56,6 @@ export function AppShell({
   title,
   onBack,
   tabBar = true,
-  onCapture,
   badges,
 }: AppShellProps) {
   const [node, setNode] = useState<HTMLDivElement | null>(null)
@@ -72,9 +69,7 @@ export function AppShell({
 
   const slot = useMemo<ActionSlot>(() => ({ node, claim }), [node, claim])
   const hasAction = claims > 0
-  // The capture button sticks up out of the bar, so the last row of a tab
-  // screen has to clear the bar AND the part of the button above it.
-  const floor = tabBar ? TAB_BAR_HEIGHT + (onCapture ? CAPTURE_OVERHANG : 0) : 0
+  const floor = tabBar ? TAB_BAR_HEIGHT : 0
 
   return (
     <ActionSlotContext.Provider value={slot}>
@@ -132,12 +127,7 @@ export function AppShell({
           />
 
           {tabBar && (
-            <TabBar
-              screen={screen}
-              onSelect={onSelectTab}
-              onCapture={onCapture}
-              badges={badges}
-            />
+            <TabBar screen={screen} onSelect={onSelectTab} badges={badges} />
           )}
         </div>
       </HeaderSlotContext.Provider>

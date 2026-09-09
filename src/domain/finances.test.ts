@@ -9,12 +9,11 @@ import {
 import { makeCampaign, makeItem, makeOrder } from './test-factories'
 
 describe('campaignSoldCents', () => {
-  it('adds up the items of confirmed orders and leaves shipping out', () => {
+  it('adds up the items of every order and leaves shipping out', () => {
     const campaign = makeCampaign()
     const orders = [
       makeOrder({
         id: 'a',
-        confirmed: true,
         shippingCost: 5,
         items: [makeItem({ price: 100, quantity: 1 })],
       }),
@@ -23,12 +22,23 @@ describe('campaignSoldCents', () => {
     expect(campaignSoldCents(orders, campaign.id)).toBe(10_000)
   })
 
-  it('ignores orders that are still only a shout in a live', () => {
+  it('counts an order she has not spoken to anybody about yet', () => {
+    // There is no confirmation any more: writing it down is the commitment, and
+    // a total that quietly left those out read as less than she had sold.
+    const orders = [makeOrder({ id: 'a', items: [makeItem({ price: 50, quantity: 1 })] })]
+
+    expect(campaignSoldCents(orders, 'camp-13')).toBe(5_000)
+  })
+
+  it('leaves out a line whose price nobody has written down', () => {
     const orders = [
-      makeOrder({ id: 'a', confirmed: false, items: [makeItem({ price: 50, quantity: 1 })] }),
+      makeOrder({
+        id: 'a',
+        items: [makeItem({ code: '38588', price: 50 }), makeItem({ code: '42102', price: undefined })],
+      }),
     ]
 
-    expect(campaignSoldCents(orders, 'camp-13')).toBe(0)
+    expect(campaignSoldCents(orders, 'camp-13')).toBe(5_000)
   })
 
   it('ignores orders from another campaign', () => {
@@ -36,7 +46,6 @@ describe('campaignSoldCents', () => {
       makeOrder({
         id: 'a',
         campaignId: 'camp-12',
-        confirmed: true,
         items: [makeItem({ price: 50, quantity: 1 })],
       }),
     ]
@@ -51,7 +60,6 @@ describe('campaignProfitCents', () => {
     const orders = [
       makeOrder({
         id: 'a',
-        confirmed: true,
         shippingCost: 5,
         items: [makeItem({ price: 100, quantity: 1 })],
       }),
@@ -63,7 +71,7 @@ describe('campaignProfitCents', () => {
   it('is undefined while the invoice has not arrived', () => {
     const campaign = makeCampaign()
     const orders = [
-      makeOrder({ id: 'a', confirmed: true, items: [makeItem({ price: 100, quantity: 1 })] }),
+      makeOrder({ id: 'a', items: [makeItem({ price: 100, quantity: 1 })] }),
     ]
 
     expect(campaignProfitCents(orders, campaign)).toBeUndefined()
@@ -74,7 +82,6 @@ describe('campaignProfitCents', () => {
     const orders = [
       makeOrder({
         id: 'a',
-        confirmed: true,
         items: [makeItem({ price: 0.1, quantity: 1 }), makeItem({ price: 0.2, quantity: 1 })],
       }),
     ]

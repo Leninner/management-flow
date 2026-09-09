@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { isPaid, orderBalance, orderSubtotal, orderTotal } from './money'
+import {
+  isPaid,
+  missingPriceCount,
+  orderBalance,
+  orderBalanceCents,
+  orderSubtotal,
+  orderSubtotalCents,
+  orderTotal,
+} from './money'
 import { makeItem, makeOrder } from './test-factories'
 
 describe('orderSubtotal', () => {
@@ -84,5 +92,32 @@ describe('float drift', () => {
     expect(orderSubtotal(order)).toBe(1)
     expect(orderTotal(order)).toBe(3.9)
     expect(orderBalance(order)).toBe(0)
+  })
+})
+
+describe('a line nobody has priced yet', () => {
+  it('adds nothing to the subtotal instead of counting as free', () => {
+    const order = makeOrder({
+      items: [makeItem({ code: '38588', price: 12.9 }), makeItem({ code: '42102', price: undefined })],
+    })
+    expect(orderSubtotalCents(order)).toBe(1290)
+  })
+
+  it('is counted so no screen can show a total it cannot support', () => {
+    const order = makeOrder({
+      items: [makeItem({ code: '38588', price: 12.9 }), makeItem({ code: '42102', price: undefined })],
+    })
+    expect(missingPriceCount(order)).toBe(1)
+  })
+
+  it('keeps the order from ever reading as settled', () => {
+    // The arithmetic says paid in full. It is comparing against a list that is
+    // still missing a line, so the answer is no.
+    const order = makeOrder({
+      items: [makeItem({ code: '38588', price: 12.9 }), makeItem({ code: '42102', price: undefined })],
+      paidAmount: 12.9,
+    })
+    expect(orderBalanceCents(order)).toBe(0)
+    expect(isPaid(order)).toBe(false)
   })
 })

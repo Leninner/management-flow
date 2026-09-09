@@ -46,7 +46,12 @@ const RECENT_CAMPAIGNS = 3
 const CUTOFF_WARNING_DAYS = 3
 const REPURCHASE_DAYS = 21
 
-/** Most urgent first. A deadline beats money, money beats housekeeping. */
+/**
+ * Most urgent first. A deadline beats money, money beats housekeeping.
+ *
+ * `confirmation` is the first message after the live, not a question about a
+ * state of the app: there is nothing left to confirm.
+ */
 const PRIORITY: Record<FollowUpTemplateKey, number> = {
   cutoff: 0,
   arrived: 1,
@@ -89,12 +94,15 @@ function orderFollowUp(order: Order, campaign: Campaign | undefined, today: stri
     candidates.push({ ...base, templateKey: 'balance', reason: 'partially paid', daysWaiting })
   }
 
-  if (order.confirmed && paid <= 0 && balance > 0 && daysWaiting >= 2) {
-    candidates.push({ ...base, templateKey: 'payment', reason: 'confirmed and nothing paid', daysWaiting })
+  if (paid <= 0 && balance > 0 && daysWaiting >= 2) {
+    candidates.push({ ...base, templateKey: 'payment', reason: 'nothing paid', daysWaiting })
   }
 
-  if (!order.confirmed && daysWaiting >= 1) {
-    candidates.push({ ...base, templateKey: 'confirmation', reason: 'captured in the live and not confirmed', daysWaiting })
+  // The first WhatsApp after the live. It used to hang off a confirmation flag;
+  // now it hangs off the only fact that matters, which is that she wrote the
+  // order down and has not said anything to the person yet.
+  if (order.contacts.length === 0 && balance > 0 && !order.deliveredAt && daysWaiting >= 1) {
+    candidates.push({ ...base, templateKey: 'confirmation', reason: 'written down in the live and never mentioned', daysWaiting })
   }
 
   if (order.deliveredAt) {

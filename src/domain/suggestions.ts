@@ -7,19 +7,27 @@
  * and is never maintained.
  */
 import { daysBetween } from './dates'
-import { normalizeName, normalizeText } from './text'
+import { normalizeText, productKey, productLabel } from './text'
 
 /** One line of history: an order item plus the date of the order it came from. */
 export interface PastItem {
+  code?: string
   name: string
-  price: number
+  /** Absent when the line was written during a live and priced later. */
+  price?: number
   usedAt: string
 }
 
 export interface ProductSuggestion {
+  code?: string
   name: string
-  /** Price of the most recent sale, which is the one worth repeating. */
-  price: number
+  /**
+   * Price of the most recent sale. Absent when the last time she sold it she
+   * had not written a price either, and also the reason the screen must offer
+   * it as a suggestion to confirm rather than as a value already filled in:
+   * prices change between campaigns.
+   */
+  price?: number
   lastUsedAt: string
   timesUsed: number
 }
@@ -33,11 +41,17 @@ export function productSuggestions(pastItems: PastItem[], query: string, limit?:
   const byProduct = new Map<string, ProductSuggestion>()
 
   for (const item of pastItems) {
-    const key = normalizeName(item.name)
+    const key = productKey(item)
     if (!key) continue
     const existing = byProduct.get(key)
     if (!existing) {
-      byProduct.set(key, { name: item.name.trim(), price: item.price, lastUsedAt: item.usedAt, timesUsed: 1 })
+      byProduct.set(key, {
+        ...(item.code ? { code: item.code } : {}),
+        name: item.name.trim(),
+        ...(item.price === undefined ? {} : { price: item.price }),
+        lastUsedAt: item.usedAt,
+        timesUsed: 1,
+      })
       continue
     }
     existing.timesUsed += 1
@@ -49,21 +63,22 @@ export function productSuggestions(pastItems: PastItem[], query: string, limit?:
   }
 
   const needle = normalizeText(query)
-  const matches = [...byProduct.values()].filter((suggestion) => normalizeName(suggestion.name).includes(needle))
+  const searchable = (suggestion: ProductSuggestion) => normalizeText(productLabel(suggestion))
+  const matches = [...byProduct.values()].filter((suggestion) => searchable(suggestion).includes(needle))
   if (matches.length === 0) return []
 
   const newest = matches.reduce((latest, item) => (item.lastUsedAt > latest ? item.lastUsedAt : latest), '')
   const score = (suggestion: ProductSuggestion) =>
     suggestion.timesUsed / (1 + Math.max(0, daysBetween(suggestion.lastUsedAt, newest)))
   const startsWithQuery = (suggestion: ProductSuggestion) =>
-    needle !== '' && normalizeName(suggestion.name).startsWith(needle)
+    needle !== '' && searchable(suggestion).startsWith(needle)
 
   const ranked = matches.sort(
     (a, b) =>
       Number(startsWithQuery(b)) - Number(startsWithQuery(a)) ||
       score(b) - score(a) ||
       b.lastUsedAt.localeCompare(a.lastUsedAt) ||
-      a.name.localeCompare(b.name, 'es', { numeric: true, sensitivity: 'base' }),
+      productLabel(a).localeCompare(productLabel(b), 'es', { numeric: true, sensitivity: 'base' }),
   )
 
   return limit === undefined ? ranked : ranked.slice(0, limit)
